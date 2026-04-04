@@ -1,0 +1,99 @@
+CC ?= cc
+BUILD ?= release
+
+ifeq ($(OS),Windows_NT)
+	PLATFORM := windows
+else
+	PLATFORM := posix
+endif
+
+# Recursive wildcard function
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+# directories
+SRC_DIR     := src
+INCLUDE_DIR := include
+
+# output directories for binaries
+OUT_DIR     ?= out/$(BUILD)
+BUILD_DIR   ?= build/$(BUILD)
+BIN_DIR     ?= $(OUT_DIR)
+
+# object and dependency file root directories
+OBJ_ROOT_DIR ?= $(BUILD_DIR)/$(BUILD)/obj
+DEP_ROOT_DIR ?= $(BUILD_DIR)/$(BUILD)/dep
+
+# outputs
+TARGET      := $(BIN_DIR)/zapup
+
+ifeq ($(PLATFORM),windows)
+	EXE_EXT := .exe
+	FIXPATH = $(subst /,\,$1)
+	RM = del /Q /S
+	RMDIR = rmdir /Q /S
+	MKDIR = if not exist "$(call FIXPATH,$1)" mkdir "$(call FIXPATH,$1)"
+else
+	EXE_EXT := .elf
+	FIXPATH = $1
+	RM = rm -f
+	RMDIR = rm -rf
+	MKDIR = mkdir -p "$1"
+endif
+
+TARGET   := $(TARGET)$(EXE_EXT)
+
+# flags
+CSTD       := -std=c11
+WARNINGS   := -Wall -Wextra
+
+COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
+
+ifeq ($(BUILD),debug)
+	CFLAGS := $(COMMON_CFLAGS) -O0 -g -DEL_DEBUG -fsanitize=address,undefined
+	LDFLAGS := -fsanitize=address,undefined
+else ifeq ($(BUILD),release)
+	CFLAGS := $(COMMON_CFLAGS) -O3 -DNDEBUG
+	LDFLAGS :=
+else
+	$(error Unknown BUILD=$(BUILD))
+endif
+
+ALL_C_SRCS := $(call rwildcard,$(SRC_DIR),*.c)
+
+MAIN_C_SRC := $(SRC_DIR)/main.c
+LIB_C_SRCS := $(filter-out $(MAIN_C_SRC), $(ALL_C_SRCS))
+
+MAIN_OBJ := $(patsubst %.c,$(OBJ_ROOT_DIR)/%.o,$(MAIN_C_SRC))
+LIB_OBJ_STATIC := $(patsubst %.c,$(OBJ_ROOT_DIR)/%.o,$(LIB_C_SRCS))
+
+DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
+
+.PHONY: all dirs clean run
+
+all: dirs $(TARGET)
+
+dirs:
+	$(call MKDIR,$(BIN_DIR))
+	$(call MKDIR,$(OBJ_ROOT_DIR))
+	$(call MKDIR,$(DEP_ROOT_DIR))
+
+$(TARGET): $(MAIN_OBJ) $(LIB_OBJ_STATIC)
+	$(CC) $(MAIN_OBJ) $(LIB_OBJ_STATIC) $(LDFLAGS) -o $@
+
+$(OBJ_ROOT_DIR)/%.o: %.c
+	$(call MKDIR,$(dir $@))
+	$(call MKDIR,$(DEP_ROOT_DIR)/$(dir $<))
+	$(CC) $(CFLAGS) -MMD -MP -MF $(DEP_ROOT_DIR)/$*.d -c $< -o $@
+
+run: all
+	$(TARGET)
+
+-include $(DEPS)
+
+clean:
+ifeq ($(PLATFORM),posix)
+	$(RMDIR) build out
+else
+	if exist build $(RMDIR) build
+	if exist out $(RMDIR) out
+endif
