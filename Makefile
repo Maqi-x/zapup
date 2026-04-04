@@ -72,9 +72,11 @@ LIB_OBJ_STATIC := $(patsubst %.c,$(OBJ_ROOT_DIR)/%.o,$(LIB_C_SRCS))
 
 DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
-.PHONY: all dirs clean run install uninstall
+.PHONY: all dirs clean run install uninstall test
 
 all: dirs $(TARGET)
+
+-include tests/build.mk
 
 dirs:
 	$(call MKDIR,$(BIN_DIR))
