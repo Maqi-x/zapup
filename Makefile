@@ -32,12 +32,16 @@ ifeq ($(PLATFORM),windows)
 	RM = del /Q /S
 	RMDIR = rmdir /Q /S
 	MKDIR = if not exist "$(call FIXPATH,$1)" mkdir "$(call FIXPATH,$1)"
+	PREFIX ?= C:/zapup
+	BINDIR ?= $(PREFIX)
 else
 	EXE_EXT := .elf
 	FIXPATH = $1
 	RM = rm -f
 	RMDIR = rm -rf
 	MKDIR = mkdir -p "$1"
+	PREFIX ?= /usr/local
+	BINDIR ?= $(PREFIX)/bin
 endif
 
 TARGET   := $(TARGET)$(EXE_EXT)
@@ -68,7 +72,7 @@ LIB_OBJ_STATIC := $(patsubst %.c,$(OBJ_ROOT_DIR)/%.o,$(LIB_C_SRCS))
 
 DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
-.PHONY: all dirs clean run
+.PHONY: all dirs clean run install uninstall
 
 all: dirs $(TARGET)
 
@@ -87,6 +91,22 @@ $(OBJ_ROOT_DIR)/%.o: %.c
 
 run: all
 	$(TARGET)
+
+install: all
+ifeq ($(PLATFORM),posix)
+	mkdir -p $(DESTDIR)$(BINDIR)
+	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/zapup
+else
+	$(call MKDIR,$(DESTDIR)$(BINDIR))
+	copy /Y $(call FIXPATH,$(TARGET)) $(call FIXPATH,$(DESTDIR)$(BINDIR)/zapup$(EXE_EXT))
+endif
+
+uninstall:
+ifeq ($(PLATFORM),posix)
+	rm -f $(DESTDIR)$(BINDIR)/zapup
+else
+	del /Q $(call FIXPATH,$(DESTDIR)$(BINDIR)/zapup$(EXE_EXT))
+endif
 
 -include $(DEPS)
 
