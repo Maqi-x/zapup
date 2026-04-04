@@ -1,13 +1,14 @@
 #pragma once
 
 #include <util/strbuf.h>
+#include <defs/sv-arr.h>
 #include <defs/sv.h>
 
 typedef struct ZCommand {
     ZStringView cwd;
 
-    ZStringView* argv;
-    ZStringView* envp;
+    ZStringViewArray argv;
+    ZStringViewArray envp;
 
     ZStringBuf* capture_stdout;
     ZStringBuf* capture_stderr;
