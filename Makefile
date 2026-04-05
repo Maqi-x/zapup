@@ -1,4 +1,5 @@
 CC ?= cc
+AR ?= ar
 BUILD ?= release
 
 ifeq ($(OS),Windows_NT)
@@ -76,6 +77,7 @@ DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
 all: dirs $(TARGET)
 
+-include external/yyjson.mk
 -include tests/build.mk
 
 dirs:
@@ -83,8 +85,8 @@ dirs:
 	$(call MKDIR,$(OBJ_ROOT_DIR))
 	$(call MKDIR,$(DEP_ROOT_DIR))
 
-$(TARGET): $(MAIN_OBJ) $(LIB_OBJ_STATIC)
-	$(CC) $(MAIN_OBJ) $(LIB_OBJ_STATIC) $(LDFLAGS) -o $@
+$(TARGET): $(MAIN_OBJ) $(LIB_OBJ_STATIC) $(EXT_LIBS)
+	$(CC) $(MAIN_OBJ) $(LIB_OBJ_STATIC) $(EXT_LIBS) $(LDFLAGS) -o $@
 
 $(OBJ_ROOT_DIR)/%.o: %.c
 	$(call MKDIR,$(dir $@))
