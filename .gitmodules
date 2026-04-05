@@ -4,3 +4,6 @@
 [submodule "external/yyjson"]
 	path = external/yyjson
 	url = https://github.com/ibireme/yyjson.git
+[submodule "external/libgit2"]
+	path = external/libgit2
+	url = https://github.com/libgit2/libgit2.git
