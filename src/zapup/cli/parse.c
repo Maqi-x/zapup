@@ -38,6 +38,19 @@ ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
 }
 
 ZCliParseResult z_cli_handle_global_short_flags(ZStringView flags, ZCliArgs* out) {
+    for (usize i = 0; i < flags.len; ++i) {
+        char flag = flags.data[i];
+        switch (flag) {
+        case 'h':
+            out->cmd = Z_CLI_CMD_HELP;
+            break;
+        default:
+            return (ZCliParseResult) {
+                .code = Z_CLI_PARSE_UNKNOWN_SHORT_FLAG,
+                .ctx.c = flag,
+            };
+        }
+    }
     return Z_CLI_PARSE_RESULT_OK;
 }
 
@@ -101,7 +114,7 @@ bool z_cli_is_long_flag(ZStringView arg) {
     return z_sv_starts_with(arg, Z_SV("--"));
 }
 bool z_cli_is_short_flag(ZStringView arg) {
-    return z_sv_starts_with(arg, Z_SV("-"));
+    return z_sv_starts_with(arg, Z_SV("-")) && arg.len > 1;
 }
 
 void z_cli_apply_defaults(ZCliArgs* out) {
