@@ -78,6 +78,7 @@ DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 all: dirs $(TARGET)
 
 -include external/yyjson.mk
+-include external/libgit2.mk
 -include tests/build.mk
 
 dirs:
