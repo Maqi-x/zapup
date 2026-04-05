@@ -119,10 +119,10 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
     int child_errno = 0;
     if (read(err_pipe[0], &child_errno, sizeof(child_errno)) > 0) {
         switch (child_errno) {
-        case ENOENT:  res.status = Z_CMD_NOT_FOUND;
-        case EACCES:  res.status = Z_CMD_PERMISSION_DENIED;
-        case ENOTDIR: res.status = Z_CMD_CHDIR_ERROR;
-        default:      res.status = Z_CMD_LAUNCH_ERROR;
+        case ENOENT:  res.status = Z_CMD_NOT_FOUND;          break;
+        case EACCES:  res.status = Z_CMD_PERMISSION_DENIED;  break;
+        case ENOTDIR: res.status = Z_CMD_CHDIR_ERROR;        break;
+        default:      res.status = Z_CMD_LAUNCH_ERROR;       break;
         }
         waitpid(pid, NULL, 0);
     } else {
