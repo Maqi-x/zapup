@@ -6,8 +6,8 @@ bool z_mkdir(ZPathView path);
 bool z_mkdir_all(ZPathView path);
 bool z_mkfile(ZPathView path);
 
-bool Z_mkdir_if_not_exists();
-bool z_mkfile_if_not_exists();
+bool z_mkdir_if_not_exists(ZPathView path);
+bool z_mkfile_if_not_exists(ZPathView path);
 
 bool z_touch(ZPathView path);
 bool z_rm(ZPathView path);
