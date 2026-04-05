@@ -30,7 +30,14 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     };
 }
 
-ZCliParseResult z_cli_try_parse_version(ZStringView arg, ZResolvableZapVersion* ver) {
+ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZResolvableZapVersion* ver) {
+    if (!z_zap_ver_is_null(*ver)) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_UNEXPECTED_ARG,
+            .ctx.str = arg,
+        };
+    }
+
     ZResolvableZapVersion result = z_parse_zap_version(arg);
     if (z_zap_ver_is_null(result)) {
         return (ZCliParseResult) {
