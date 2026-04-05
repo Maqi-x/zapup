@@ -8,6 +8,8 @@ typedef enum ZCliParseErrorCode {
     Z_CLI_PARSE_UNKNOWN_SHORT_FLAG,
     Z_CLI_PARSE_UNKNOWN_COMMAND,
     Z_CLI_PARSE_UNEXPECTED_ARG,
+    Z_CLI_PARSE_EXPECTED_ARG,
+    Z_CLI_PARSE_WRONG_ARG_FORMAT,
 } ZCliParseErrorCode;
 
 typedef struct ZCliParseResult {
