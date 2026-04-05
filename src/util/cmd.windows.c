@@ -121,7 +121,7 @@ static void z_cmd_capture_output(const ZCommand* cmd, ZWinPipes* pipes) {
 }
 
 ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
-    ZCmdRunResult result = { .status = Z_CMD_SPAWN_ERROR, .exit_code = -1 };
+    ZCmdRunResult result = { .status = Z_CMD_LAUNCH_ERROR, .exit_code = -1 };
     ZWinPipes pipes = { 0 };
     STARTUPINFOA si = { .cb = sizeof(STARTUPINFOA) };
     PROCESS_INFORMATION pi = { 0 };
@@ -132,6 +132,11 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
     char* env_block = z_cmd_build_env_block(&cmd->envp);
     char* cwd_cstr = z_sv_to_cstr_alloc(cmd->cwd);
 
+    if (!cmd_line || (!z_sv_is_null(cmd->cwd) && !cwd_cstr)) {
+        result.status = Z_CMD_MALLOC_ERROR;
+        goto cleanup;
+    }
+
     if (CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, env_block, cwd_cstr, &si, &pi)) {
         z_cmd_capture_output(cmd, &pipes);
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -139,11 +144,20 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
         if (GetExitCodeProcess(pi.hProcess, &exit_code)) {
             result.status = Z_CMD_OK;
             result.exit_code = (int)exit_code;
+        } else {
+            result.status = Z_CMD_WAIT_ERROR;
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+    } else {
+        DWORD err = GetLastError();
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) result.status = Z_CMD_NOT_FOUND;
+        else if (err == ERROR_ACCESS_DENIED) result.status = Z_CMD_PERMISSION_DENIED;
+        else if (err == ERROR_DIRECTORY) result.status = Z_CMD_CHDIR_ERROR;
+        else result.status = Z_CMD_LAUNCH_ERROR;
     }
 
+cleanup:
     free(cmd_line);
     free(env_block);
     free(cwd_cstr);
