@@ -48,7 +48,7 @@ endif
 TARGET   := $(TARGET)$(EXE_EXT)
 
 # flags
-CSTD       := -std=c11
+CSTD       := -std=c11 -D_GNU_SOURCE
 WARNINGS   := -Wall -Wextra
 
 COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
