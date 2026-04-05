@@ -16,6 +16,6 @@ typedef struct ZCliParseResult {
     } ctx;
 } ZCliParseResult;
 
-#define Z_CLI_PARSE_RESULT_MK_OK() ((ZCliParseResult) { .code = Z_CLI_PARSE_OK })
+#define Z_CLI_PARSE_RESULT_OK ((ZCliParseResult) { .code = Z_CLI_PARSE_OK })
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);
