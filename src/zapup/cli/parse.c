@@ -1,22 +1,30 @@
 #include <zapup/cli/parse.h>
 #include <zapup/cli/args.h>
 
+#include <util/arr-len.h>
+
 ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
-    if (z_sv_eql(arg, Z_SV("install"))) {
-        *cmd = Z_CLI_CMD_INSTALL;
-    } else if (z_sv_eql(arg, Z_SV("uninstall"))) {
-        *cmd = Z_CLI_CMD_UNINSTALL;
-    } else if (z_sv_eql(arg, Z_SV("sync"))) {
-        *cmd = Z_CLI_CMD_SYNC;
-    } else if (z_sv_eql(arg, Z_SV("help"))) {
-        *cmd = Z_CLI_CMD_HELP;
-    } else {
-        return (ZCliParseResult) {
-            .code = Z_CLI_PARSE_UNKNOWN_COMMAND,
-            .ctx.str = arg,
-        };
+    static const struct {
+        ZStringView name;
+        ZCliCommand cmd;
+    } table[] = {
+        { Z_SV("install"),   Z_CLI_CMD_INSTALL },
+        { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
+        { Z_SV("sync"),      Z_CLI_CMD_SYNC },
+        { Z_SV("help"),      Z_CLI_CMD_HELP },
+    };
+
+    for (size_t i = 0; i < Z_ARRAY_LEN(table); i++) {
+        if (z_sv_eql(arg, table[i].name)) {
+            *cmd = table[i].cmd;
+            return Z_CLI_PARSE_RESULT_OK;
+        }
     }
-    return Z_CLI_PARSE_RESULT_OK;
+
+    return (ZCliParseResult) {
+        .code = Z_CLI_PARSE_UNKNOWN_COMMAND,
+        .ctx.str = arg,
+    };
 }
 
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
