@@ -1,0 +1,43 @@
+#pragma once
+
+#include <zapup/version.h>
+
+typedef enum ZCliCommand {
+    Z_CLI_CMD_INSTALL,
+    Z_CLI_CMD_SYNC,
+    Z_CLI_CMD_UNINSTALL,
+    Z_CLI_CMD_HELP,
+    Z_CLI_CMD_UNKNOWN,
+} ZCliCommand;
+
+typedef struct ZCliInstallArgs {
+    ZResolvableZapVersion version;    
+} ZCliInstallArgs;
+
+typedef struct ZCliSyncArgs {
+    
+} ZCliSyncArgs;
+
+typedef struct ZCliUninstallArgs {
+    ZResolvableZapVersion version;    
+} ZCliUninstallArgs;
+
+typedef struct ZCliHelpArgs {
+    
+} ZCliHelpArgs;
+
+
+typedef struct ZCliGlobalArgs {
+
+} ZCliGlobalArgs;
+
+typedef struct ZCliArgs {
+    ZCliGlobalArgs global_args;
+    ZCliCommand cmd;
+    union {
+        ZCliInstallArgs install;
+        ZCliUninstallArgs uninstall;
+        ZCliSyncArgs sync;
+        ZCliHelpArgs help;
+    } cmd_args;
+} ZCliArgs;
