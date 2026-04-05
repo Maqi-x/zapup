@@ -16,6 +16,6 @@ typedef struct ZCliParseError {
     } ctx;
 } ZCliParseError;
 
-#define Z_CLI_PARSE_MK_OK ((ZCliParseError) { .code = Z_CLI_PARSE_OK })
+#define Z_CLI_PARSE_MK_OK() ((ZCliParseError) { .code = Z_CLI_PARSE_OK })
 
 ZCliParseError z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);
