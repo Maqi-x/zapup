@@ -16,7 +16,12 @@ typedef struct ZCommand {
 
 typedef enum ZCmdStatus {
     Z_CMD_OK,
-    Z_CMD_SPAWN_ERROR,
+    Z_CMD_MALLOC_ERROR,
+    Z_CMD_LAUNCH_ERROR,
+    Z_CMD_CHDIR_ERROR,
+    Z_CMD_NOT_FOUND,
+    Z_CMD_PERMISSION_DENIED,
+    Z_CMD_WAIT_ERROR,
 } ZCmdStatus;
 
 typedef struct ZCmdRunResult {
