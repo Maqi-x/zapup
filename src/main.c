@@ -10,6 +10,7 @@ int main() {
 
     git_repository* repo;
     z_clone_zap_repo_with_version(v, Z_PV("./out-repo"), &repo);
+    git_repository_free(repo);
 
     git_libgit2_shutdown();
 }
