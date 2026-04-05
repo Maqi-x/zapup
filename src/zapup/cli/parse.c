@@ -1,6 +1,8 @@
 #include <zapup/cli/parse.h>
 #include <zapup/cli/args.h>
 
+#include <zapup/version.h>
+
 #include <util/arr-len.h>
 #include <util/macros.h>
 
@@ -26,6 +28,18 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
         .code = Z_CLI_PARSE_UNKNOWN_COMMAND,
         .ctx.str = arg,
     };
+}
+
+ZCliParseResult z_cli_try_parse_version(ZStringView arg, ZResolvableZapVersion* ver) {
+    ZResolvableZapVersion result = z_parse_zap_version(arg);
+    if (z_zap_ver_is_null(result)) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .ctx.str = arg,
+        };
+    }
+    *ver = result;
+    return Z_CLI_PARSE_RESULT_OK;
 }
 
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
