@@ -28,11 +28,19 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
 }
 
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
-    return Z_CLI_PARSE_RESULT_OK;
+    if (z_sv_eql(flag, Z_SV("help"))) {
+        out->cmd = Z_CLI_CMD_HELP;
+    }
+    return (ZCliParseResult) {
+        .code = Z_CLI_PARSE_UNKNOWN_LONG_FLAG,
+        .ctx.str = flag,
+    };
 }
+
 ZCliParseResult z_cli_handle_global_short_flags(ZStringView flags, ZCliArgs* out) {
     return Z_CLI_PARSE_RESULT_OK;
 }
+
 ZCliParseResult z_cli_handle_global_arg(ZStringView arg, ZCliArgs* out) {
     ZCliParseResult err = z_find_cmd_from_arg(arg, &out->cmd);
     if (err.code != Z_CLI_PARSE_OK){
