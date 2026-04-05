@@ -167,4 +167,4 @@ cleanup:
     return result;
 }
 
-#endif
+#endif // Z_PLATFORM_IS_WINDOWS

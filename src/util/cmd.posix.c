@@ -139,4 +139,4 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
     return res;
 }
 
-#endif
+#endif // Z_PLATFORM_IS_POSIX
