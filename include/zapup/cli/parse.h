@@ -9,13 +9,13 @@ typedef enum ZCliParseErrorCode {
     // TODO
 } ZCliParseErrorCode;
 
-typedef struct ZCliParseError {
+typedef struct ZCliParseResult {
     ZCliParseErrorCode code;
     union {
         ZStringView str;
     } ctx;
-} ZCliParseError;
+} ZCliParseResult;
 
-#define Z_CLI_PARSE_MK_OK() ((ZCliParseError) { .code = Z_CLI_PARSE_OK })
+#define Z_CLI_PARSE_RESULT_MK_OK() ((ZCliParseResult) { .code = Z_CLI_PARSE_OK })
 
-ZCliParseError z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);
+ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);
