@@ -2,6 +2,7 @@
 #include <zapup/cli/args.h>
 
 #include <util/arr-len.h>
+#include <util/macros.h>
 
 ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     static const struct {
@@ -120,9 +121,26 @@ bool z_cli_is_short_flag(ZStringView arg) {
 void z_cli_apply_defaults(ZCliArgs* out) {
     out->cmd = Z_CLI_CMD_UNKNOWN;
 }
+void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
+    switch (cmd) {
+    case Z_CLI_CMD_INSTALL:
+        out->cmd_args.install.version = Z_ZAP_VERSION_NULL;
+        break;
+    case Z_CLI_CMD_UNINSTALL:
+        out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
+        break;
+    case Z_CLI_CMD_SYNC:
+        break;
+    case Z_CLI_CMD_HELP:
+        break;
+    case Z_CLI_CMD_UNKNOWN:
+        Z_UNREACHABLE("z_cli_apply_command_defaults() should not be called with Z_CLI_CMD_UNKNOWN parameter");
+    }
+}
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
     for (usize i = 1; i < (usize)argc; ++i) {
+        ZCliCommand cmd_old = out->cmd;
         ZStringView arg = z_sv_from_cstr(argv[i]);
         if (z_cli_is_long_flag(arg)) {
             ZStringView flag = z_sv_trim_prefix(arg, Z_SV("--"));
@@ -141,6 +159,10 @@ ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* ou
             if (err.code != Z_CLI_PARSE_OK) {
                 return err;
             }
+        }
+
+        if (out->cmd != cmd_old) {
+            z_cli_apply_command_defaults(out->cmd, out);
         }
     }
     return Z_CLI_PARSE_RESULT_OK;
