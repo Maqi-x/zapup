@@ -1,4 +1,5 @@
 #include <zapup/storage.h>
+#include <zapup/info.h>
 
 #include <util/fs.h>
 #include <util/pathbuf.h>
@@ -20,15 +21,15 @@ static bool z_paths_init_and_join(ZPathBuf* out, const char* base, ZPathView rel
 
 bool z_paths_find_data_dir(ZPathBuf* out) {
     // %APPDATA%\zapup
-    return z_paths_init_and_join(out, getenv("APPDATA"), Z_PV("zapup\\config"));
+    return z_paths_init_and_join(out, getenv("APPDATA"), Z_PV(APP_NAME "\\config"));
 }
 bool z_paths_find_cache_dir(ZPathBuf* out) {
     // %LOCALAPPDATA%\zapup\cache
-    return z_paths_init_and_join(out, getenv("LOCALAPPDATA"), Z_PV("zapup\\cache"));
+    return z_paths_init_and_join(out, getenv("LOCALAPPDATA"), Z_PV(APP_NAME "\\cache"));
 }
 bool z_paths_find_config_dir(ZPathBuf* out) {
     // %APPDATA%\zapup
-    return z_paths_init_and_join(out, getenv("APPDATA"), Z_PV("zapup\\data"));
+    return z_paths_init_and_join(out, getenv("APPDATA"), Z_PV(APP_NAME "\\data"));
 }
 
 #else
@@ -37,14 +38,14 @@ static bool z_paths_find_xdg_dir(ZPathBuf* out, const char* xdg_env, ZPathView f
     const char* xdg = getenv(xdg_env);
     if (xdg && xdg[0] != '\0') {
         if (!z_pathbuf_init_from(out, z_pathview_from_cstr(xdg))) return false;
-        return z_pathbuf_join(out, Z_PV("zapup"));
+        return z_pathbuf_join(out, Z_PV(APP_NAME));
     }
 
     const char* home = getenv("HOME");
     if (!home || home[0] == '\0') return false;
     if (!z_pathbuf_init_from(out, z_pathview_from_cstr(home))) return false;
     if (!z_pathbuf_join(out, fallback_rel)) return false;
-    return z_pathbuf_join(out, Z_PV("zapup"));
+    return z_pathbuf_join(out, Z_PV(APP_NAME));
 }
 
 bool z_paths_find_data_dir(ZPathBuf* out) {
