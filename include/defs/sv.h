@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct ZStringView {
@@ -81,4 +82,13 @@ static inline ZStringView z_sv_window(ZStringView sv, usize start, usize len) {
     if (start + len > sv.len) len = sv.len - start;
 
     return (ZStringView) { .data = sv.data + start, .len = len };
+}
+
+static inline char* z_sv_to_cstr_alloc(ZStringView sv) {
+    if (z_sv_is_null(sv)) return NULL;
+    char* cstr = malloc(sv.len + 1);
+    if (cstr == NULL) return NULL;
+    memcpy(cstr, sv.data, sv.len);
+    cstr[sv.len] = '\0';
+    return cstr;
 }
