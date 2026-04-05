@@ -17,153 +17,126 @@ typedef struct {
     int stderr_pipe[2];
 } ZPipes;
 
+static void z_cmd_close_pipes(ZPipes* pipes) {
+    if (pipes->stdout_pipe[0] != -1) { close(pipes->stdout_pipe[0]); close(pipes->stdout_pipe[1]); }
+    if (pipes->stderr_pipe[0] != -1) { close(pipes->stderr_pipe[0]); close(pipes->stderr_pipe[1]); }
+}
+
 static bool z_cmd_setup_pipes(const ZCommand* cmd, ZPipes* pipes) {
     pipes->stdout_pipe[0] = pipes->stdout_pipe[1] = -1;
     pipes->stderr_pipe[0] = pipes->stderr_pipe[1] = -1;
 
-    if (cmd->capture_stdout != NULL) {
-        if (pipe(pipes->stdout_pipe) == -1) return false;
-    }
-    if (cmd->capture_stderr != NULL) {
-        if (pipe(pipes->stderr_pipe) == -1) {
-            if (pipes->stdout_pipe[0] != -1) {
-                close(pipes->stdout_pipe[0]);
-                close(pipes->stdout_pipe[1]);
-            }
-            return false;
-        }
+    if (cmd->capture_stdout != NULL && pipe(pipes->stdout_pipe) == -1) return false;
+    if (cmd->capture_stderr != NULL && pipe(pipes->stderr_pipe) == -1) {
+        z_cmd_close_pipes(pipes);
+        return false;
     }
     return true;
 }
 
-static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes) {
+static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes, int err_fd) {
     if (!z_sv_is_null(cmd->cwd) && cmd->cwd.len > 0) {
         char* cwd_cstr = z_sv_to_cstr_alloc(cmd->cwd);
-        if (cwd_cstr) {
-            if (chdir(cwd_cstr) == -1) {
-                perror("chdir");
-                _exit(127);
-            }
-            free(cwd_cstr);
+        if (!cwd_cstr || chdir(cwd_cstr) == -1) {
+            int err = errno;
+            (void)write(err_fd, &err, sizeof(err));
+            _exit(1);
         }
+        free(cwd_cstr);
     }
 
-    if (cmd->capture_stdout != NULL) {
-        dup2(pipes->stdout_pipe[1], STDOUT_FILENO);
-        close(pipes->stdout_pipe[0]);
-        close(pipes->stdout_pipe[1]);
-    }
-    if (cmd->capture_stderr != NULL) {
-        dup2(pipes->stderr_pipe[1], STDERR_FILENO);
-        close(pipes->stderr_pipe[0]);
-        close(pipes->stderr_pipe[1]);
+    if (cmd->capture_stdout) { dup2(pipes->stdout_pipe[1], STDOUT_FILENO); }
+    if (cmd->capture_stderr) { dup2(pipes->stderr_pipe[1], STDERR_FILENO); }
+    if (cmd->capture_stdout || cmd->capture_stderr) {
+        z_cmd_close_pipes((ZPipes*)pipes);
     }
 
     char** argv = malloc((cmd->argv.count + 1) * sizeof(char*));
-    if (argv) {
-        for (usize i = 0; i < cmd->argv.count; i++) {
-            argv[i] = z_sv_to_cstr_alloc(cmd->argv.data[i]);
-        }
-        argv[cmd->argv.count] = NULL;
+    for (usize i = 0; argv && i < cmd->argv.count; i++) argv[i] = z_sv_to_cstr_alloc(cmd->argv.data[i]);
+    if (argv) argv[cmd->argv.count] = NULL;
+
+    if (!argv || !argv[0]) {
+        int err = ENOMEM;
+        (void)write(err_fd, &err, sizeof(err));
+        _exit(1);
     }
 
-    if (cmd->envp.count > 0) {
-        char** envp = malloc((cmd->envp.count + 1) * sizeof(char*));
-        if (envp) {
-            for (usize i = 0; i < cmd->envp.count; i++) {
-                envp[i] = z_sv_to_cstr_alloc(cmd->envp.data[i]);
-            }
-            envp[cmd->envp.count] = NULL;
-            extern char **environ;
-            environ = envp;
-        }
-    }
-
-    if (argv && argv[0]) {
-        execvp(argv[0], argv);
-    }
-    _exit(127);
+    execvp(argv[0], argv);
+    int err = errno;
+    (void)write(err_fd, &err, sizeof(err));
+    _exit(1);
 }
 
 static void z_cmd_capture_output(const ZCommand* cmd, ZPipes* pipes) {
-    if (cmd->capture_stdout != NULL) close(pipes->stdout_pipe[1]);
-    if (cmd->capture_stderr != NULL) close(pipes->stderr_pipe[1]);
+    if (cmd->capture_stdout) close(pipes->stdout_pipe[1]);
+    if (cmd->capture_stderr) close(pipes->stderr_pipe[1]);
 
     struct pollfd pfd[2];
-    int n_pfds = 0;
-    if (cmd->capture_stdout != NULL) {
-        pfd[n_pfds].fd = pipes->stdout_pipe[0];
-        pfd[n_pfds].events = POLLIN;
-        n_pfds++;
-    }
-    if (cmd->capture_stderr != NULL) {
-        pfd[n_pfds].fd = pipes->stderr_pipe[0];
-        pfd[n_pfds].events = POLLIN;
-        n_pfds++;
-    }
+    int n = 0;
+    if (cmd->capture_stdout) { pfd[n].fd = pipes->stdout_pipe[0]; pfd[n++].events = POLLIN; }
+    if (cmd->capture_stderr) { pfd[n].fd = pipes->stderr_pipe[0]; pfd[n++].events = POLLIN; }
 
-    while (n_pfds > 0) {
-        if (poll(pfd, n_pfds, -1) == -1) {
-            if (errno == EINTR) continue;
-            break;
-        }
-
-        for (int i = 0; i < n_pfds; i++) {
+    while (n > 0) {
+        if (poll(pfd, n, -1) <= 0) { if (errno == EINTR) continue; break; }
+        for (int i = 0; i < n; i++) {
             if (pfd[i].revents & (POLLIN | POLLHUP | POLLERR)) {
                 char buf[4096];
-                ssize_t n = read(pfd[i].fd, buf, sizeof(buf));
-                if (n > 0) {
-                    if (cmd->capture_stdout && pfd[i].fd == pipes->stdout_pipe[0]) {
-                        z_strbuf_append(cmd->capture_stdout, z_sv_from_data_and_len(buf, (usize)n));
-                    } else if (cmd->capture_stderr && pfd[i].fd == pipes->stderr_pipe[0]) {
-                        z_strbuf_append(cmd->capture_stderr, z_sv_from_data_and_len(buf, (usize)n));
-                    }
-                } else if (n == 0 || (n == -1 && errno != EINTR && errno != EAGAIN)) {
-                    close(pfd[i].fd);
-                    pfd[i] = pfd[n_pfds - 1];
-                    n_pfds--;
-                    i--;
+                ssize_t r = read(pfd[i].fd, buf, sizeof(buf));
+                if (r > 0) {
+                    ZStringBuf* b = (cmd->capture_stdout && pfd[i].fd == pipes->stdout_pipe[0]) ? cmd->capture_stdout : cmd->capture_stderr;
+                    z_strbuf_append(b, z_sv_from_data_and_len(buf, (usize)r));
+                } else if (r == 0 || (r == -1 && errno != EINTR && errno != EAGAIN)) {
+                    close(pfd[i].fd); pfd[i] = pfd[--n]; i--;
                 }
-            } else if (pfd[i].revents & POLLNVAL) {
-                close(pfd[i].fd);
-                pfd[i] = pfd[n_pfds - 1];
-                n_pfds--;
-                i--;
             }
         }
     }
 }
 
 ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
-    ZCmdRunResult result = { .status = Z_CMD_SPAWN_ERROR, .exit_code = -1 };
+    ZCmdRunResult res = { .status = Z_CMD_LAUNCH_ERROR, .exit_code = -1 };
     ZPipes pipes;
+    int err_pipe[2];
 
-    if (!z_cmd_setup_pipes(cmd, &pipes)) return result;
+    if (!z_cmd_setup_pipes(cmd, &pipes)) return res;
+    if (pipe(err_pipe) == -1) { z_cmd_close_pipes(&pipes); return res; }
+    fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
 
     pid_t pid = fork();
     if (pid == -1) {
-        if (pipes.stdout_pipe[0] != -1) { close(pipes.stdout_pipe[0]); close(pipes.stdout_pipe[1]); }
-        if (pipes.stderr_pipe[0] != -1) { close(pipes.stderr_pipe[0]); close(pipes.stderr_pipe[1]); }
-        return result;
+        close(err_pipe[0]); close(err_pipe[1]);
+        z_cmd_close_pipes(&pipes);
+        return res;
     }
 
     if (pid == 0) {
-        z_cmd_child_setup(cmd, &pipes);
+        close(err_pipe[0]);
+        z_cmd_child_setup(cmd, &pipes, err_pipe[1]);
+        _exit(1);
     }
 
-    z_cmd_capture_output(cmd, &pipes);
-
-    int status;
-    if (waitpid(pid, &status, 0) != -1) {
-        result.status = Z_CMD_OK;
-        if (WIFEXITED(status)) {
-            result.exit_code = WEXITSTATUS(status);
-        } else if (WIFSIGNALED(status)) {
-            result.exit_code = 128 + WTERMSIG(status);
+    close(err_pipe[1]);
+    int child_errno = 0;
+    if (read(err_pipe[0], &child_errno, sizeof(child_errno)) > 0) {
+        switch (child_errno) {
+        case ENOENT:  res.status = Z_CMD_NOT_FOUND;
+        case EACCES:  res.status = Z_CMD_PERMISSION_DENIED;
+        case ENOTDIR: res.status = Z_CMD_CHDIR_ERROR;
+        default:      res.status = Z_CMD_LAUNCH_ERROR;
         }
+        waitpid(pid, NULL, 0);
+    } else {
+        z_cmd_capture_output(cmd, &pipes);
+        int status;
+        if (waitpid(pid, &status, 0) != -1) {
+            res.status = Z_CMD_OK;
+            res.exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : (WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1);
+        } else res.status = Z_CMD_WAIT_ERROR;
     }
-
-    return result;
+    close(err_pipe[0]);
+    if (pipes.stdout_pipe[0] != -1) close(pipes.stdout_pipe[0]);
+    if (pipes.stderr_pipe[0] != -1) close(pipes.stderr_pipe[0]);
+    return res;
 }
 
 #endif
