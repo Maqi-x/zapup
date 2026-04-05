@@ -3,10 +3,11 @@
 #include <zapup/version.h>
 
 typedef enum ZCliCommand {
-    Z_CLI_INSTALL,
-    Z_CLI_SYNC,
-    Z_CLI_UNINSTALL,
-    Z_CLI_HELP,
+    Z_CLI_CMD_INSTALL,
+    Z_CLI_CMD_SYNC,
+    Z_CLI_CMD_UNINSTALL,
+    Z_CLI_CMD_HELP,
+    Z_CLI_CMD_UNKNOWN,
 } ZCliCommand;
 
 typedef struct ZCliInstallArgs {
