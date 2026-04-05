@@ -71,13 +71,9 @@ ZCliParseResult z_cli_unknown_short_flag(char flag) {
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
     if (z_sv_eql(flag, Z_SV("help"))) {
         out->cmd = Z_CLI_CMD_HELP;
-    } else {
-        return (ZCliParseResult) {
-            .code = Z_CLI_PARSE_UNKNOWN_LONG_FLAG,
-            .ctx.str = flag,
-        };
+        return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
     }
-    return Z_CLI_PARSE_RESULT_OK;
+    return z_cli_unknown_long_flag(flag);
 }
 
 ZCliParseResult z_cli_handle_global_short_flags(ZStringView flags, ZCliArgs* out) {
@@ -86,7 +82,7 @@ ZCliParseResult z_cli_handle_global_short_flags(ZStringView flags, ZCliArgs* out
         switch (flag) {
         case 'h':
             out->cmd = Z_CLI_CMD_HELP;
-            break;
+            return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
         default:
             return (ZCliParseResult) {
                 .code = Z_CLI_PARSE_UNKNOWN_SHORT_FLAG,
@@ -180,6 +176,14 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     }
 }
 
+#define Z_CLI_HANDLE_ERR(ERR)               \
+    if ((ERR).code == _Z_CLI_PARSE_STOP) {  \
+        return Z_CLI_PARSE_RESULT_OK;       \
+    }                                       \
+    if ((ERR).code != Z_CLI_PARSE_OK) {     \
+        return err;                         \
+    }
+
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
     for (usize i = 1; i < (usize)argc; ++i) {
         ZCliCommand cmd_old = out->cmd;
@@ -187,20 +191,14 @@ ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* ou
         if (z_cli_is_long_flag(arg)) {
             ZStringView flag = z_sv_trim_prefix(arg, Z_SV("--"));
             ZCliParseResult err = z_cli_handle_long_flag(flag, out);
-            if (err.code != Z_CLI_PARSE_OK) {
-                return err;
-            }
+            Z_CLI_HANDLE_ERR(err);
         } else if (z_cli_is_short_flag(arg)) {
             ZStringView flags = z_sv_trim_prefix(arg, Z_SV("-"));
             ZCliParseResult err = z_cli_handle_short_flags(flags, out);
-            if (err.code != Z_CLI_PARSE_OK) {
-                return err;
-            }
+            Z_CLI_HANDLE_ERR(err);
         } else {
             ZCliParseResult err = z_cli_handle_arg(arg, out);
-            if (err.code != Z_CLI_PARSE_OK) {
-                return err;
-            }
+            Z_CLI_HANDLE_ERR(err);
         }
 
         if (out->cmd != cmd_old) {
