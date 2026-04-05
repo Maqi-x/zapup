@@ -1,6 +1,24 @@
 #include <zapup/cli/parse.h>
 #include <zapup/cli/args.h>
 
+ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
+    if (z_sv_eql(arg, Z_SV("install"))) {
+        *cmd = Z_CLI_CMD_INSTALL;
+    } else if (z_sv_eql(arg, Z_SV("uninstall"))) {
+        *cmd = Z_CLI_CMD_UNINSTALL;
+    } else if (z_sv_eql(arg, Z_SV("sync"))) {
+        *cmd = Z_CLI_CMD_SYNC;
+    } else if (z_sv_eql(arg, Z_SV("help"))) {
+        *cmd = Z_CLI_CMD_HELP;
+    } else {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_UNKNOWN_COMMAND,
+            .ctx.str = arg,
+        };
+    }
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView arg, ZCliArgs* out) {
     return Z_CLI_PARSE_RESULT_OK;
 }
@@ -8,6 +26,10 @@ ZCliParseResult z_cli_handle_global_short_flag(ZStringView arg, ZCliArgs* out) {
     return Z_CLI_PARSE_RESULT_OK;
 }
 ZCliParseResult z_cli_handle_global_arg(ZStringView arg, ZCliArgs* out) {
+    ZCliParseResult err = z_find_cmd_from_arg(arg, &out->cmd);
+    if (err.code != Z_CLI_PARSE_OK){
+        return err;
+    }
     return Z_CLI_PARSE_RESULT_OK;
 }
 
