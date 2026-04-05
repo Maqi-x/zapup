@@ -14,15 +14,6 @@ typedef struct {
     HANDLE stderr_write;
 } ZWinPipes;
 
-static char* z_sv_to_cstr(ZStringView sv) {
-    if (z_sv_is_null(sv)) return NULL;
-    char* cstr = malloc(sv.len + 1);
-    if (cstr == NULL) return NULL;
-    memcpy(cstr, sv.data, sv.len);
-    cstr[sv.len] = '\0';
-    return cstr;
-}
-
 static bool z_cmd_setup_pipes(const ZCommand* cmd, ZWinPipes* pipes, STARTUPINFOA* si) {
     pipes->stdout_read = pipes->stdout_write = NULL;
     pipes->stderr_read = pipes->stderr_write = NULL;
@@ -139,7 +130,7 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
 
     char* cmd_line = z_cmd_build_command_line(&cmd->argv);
     char* env_block = z_cmd_build_env_block(&cmd->envp);
-    char* cwd_cstr = z_sv_to_cstr(cmd->cwd);
+    char* cwd_cstr = z_sv_to_cstr_alloc(cmd->cwd);
 
     if (CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, env_block, cwd_cstr, &si, &pi)) {
         z_cmd_capture_output(cmd, &pipes);

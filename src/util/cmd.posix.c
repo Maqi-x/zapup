@@ -3,10 +3,11 @@
 #if Z_PLATFORM_IS_POSIX
 
 #include <util/cmd.h>
+
 #include <unistd.h>
 #include <sys/wait.h>
+
 #include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -15,15 +16,6 @@ typedef struct {
     int stdout_pipe[2];
     int stderr_pipe[2];
 } ZPipes;
-
-static char* z_sv_to_cstr(ZStringView sv) {
-    if (z_sv_is_null(sv)) return NULL;
-    char* cstr = malloc(sv.len + 1);
-    if (cstr == NULL) return NULL;
-    memcpy(cstr, sv.data, sv.len);
-    cstr[sv.len] = '\0';
-    return cstr;
-}
 
 static bool z_cmd_setup_pipes(const ZCommand* cmd, ZPipes* pipes) {
     pipes->stdout_pipe[0] = pipes->stdout_pipe[1] = -1;
@@ -46,7 +38,7 @@ static bool z_cmd_setup_pipes(const ZCommand* cmd, ZPipes* pipes) {
 
 static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes) {
     if (!z_sv_is_null(cmd->cwd) && cmd->cwd.len > 0) {
-        char* cwd_cstr = z_sv_to_cstr(cmd->cwd);
+        char* cwd_cstr = z_sv_to_cstr_alloc(cmd->cwd);
         if (cwd_cstr) {
             if (chdir(cwd_cstr) == -1) {
                 perror("chdir");
@@ -70,7 +62,7 @@ static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes) {
     char** argv = malloc((cmd->argv.count + 1) * sizeof(char*));
     if (argv) {
         for (usize i = 0; i < cmd->argv.count; i++) {
-            argv[i] = z_sv_to_cstr(cmd->argv.data[i]);
+            argv[i] = z_sv_to_cstr_alloc(cmd->argv.data[i]);
         }
         argv[cmd->argv.count] = NULL;
     }
@@ -79,7 +71,7 @@ static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes) {
         char** envp = malloc((cmd->envp.count + 1) * sizeof(char*));
         if (envp) {
             for (usize i = 0; i < cmd->envp.count; i++) {
-                envp[i] = z_sv_to_cstr(cmd->envp.data[i]);
+                envp[i] = z_sv_to_cstr_alloc(cmd->envp.data[i]);
             }
             envp[cmd->envp.count] = NULL;
             extern char **environ;
