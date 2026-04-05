@@ -101,11 +101,21 @@ void test_cmd_cwd(void) {
     z_strbuf_destroy(&stdout_buf);
 }
 
+void test_cmd_not_found(void) {
+    ZCommand cmd = {
+        .argv = Z_STRING_VIEWS(Z_SV("non-existent-command-xyz-123")),
+    };
+
+    ZCmdRunResult result = z_cmd_run(&cmd);
+    TEST_ASSERT_EQUAL(Z_CMD_NOT_FOUND, result.status);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_cmd_run_true);
     RUN_TEST(test_cmd_run_false);
     RUN_TEST(test_cmd_capture_stdout);
     RUN_TEST(test_cmd_cwd);
+    RUN_TEST(test_cmd_not_found);
     return UNITY_END();
 }
