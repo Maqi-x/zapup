@@ -8,6 +8,7 @@
 
 #include <windows.h>
 #include <stdlib.h>
+#include <string.h>
 
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
@@ -64,6 +65,30 @@ bool z_mkfile(ZPathView path) {
     return true;
 }
 
+bool z_mkdir_if_not_exists(ZPathView path) {
+    return z_mkdir(path);
+}
+
+bool z_mkfile_if_not_exists(ZPathView path) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    HANDLE hFile = CreateFileA(cpath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_EXISTS || GetLastError() == ERROR_ALREADY_EXISTS) {
+            free(cpath);
+            return true;
+        }
+        free(cpath);
+        return false;
+    }
+
+    CloseHandle(hFile);
+    free(cpath);
+    return true;
+}
+
 bool z_touch(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);
@@ -89,6 +114,128 @@ bool z_touch(ZPathView path) {
     CloseHandle(hFile);
     free(cpath);
     return res != 0;
+}
+
+bool z_rm(ZPathView path) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    DWORD attrs = GetFileAttributesA(cpath);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        free(cpath);
+        return false;
+    }
+
+    BOOL res;
+    if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
+        res = RemoveDirectoryA(cpath);
+    } else {
+        res = DeleteFileA(cpath);
+    }
+
+    free(cpath);
+    return res != 0;
+}
+
+static bool z_rm_recursive_internal(ZPathBuf* pb) {
+    ZPathView current_pv = z_pathbuf_as_view(pb);
+    char* cpath = z_sv_to_cstr_alloc(current_pv);
+    if (!cpath) return false;
+
+    DWORD attrs = GetFileAttributesA(cpath);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        free(cpath);
+        return false;
+    }
+
+    if (!(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+        BOOL res = DeleteFileA(cpath);
+        free(cpath);
+        return res != 0;
+    }
+
+    ZPathBuf search_pb;
+    z_pathbuf_init_from(&search_pb, current_pv);
+    z_pathbuf_join(&search_pb, Z_SV("*"));
+    char* csearch = z_sv_to_cstr_alloc(z_pathbuf_as_view(&search_pb));
+    z_pathbuf_destroy(&search_pb);
+
+    WIN32_FIND_DATAA fd;
+    HANDLE hFind = FindFirstFileA(csearch, &fd);
+    free(csearch);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+             BOOL res = RemoveDirectoryA(cpath);
+             free(cpath);
+             return res != 0;
+        }
+        free(cpath);
+        return false;
+    }
+
+    bool success = true;
+    usize original_len = pb->len;
+
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0) {
+            continue;
+        }
+
+        if (!z_pathbuf_join(pb, z_sv_from_cstr(fd.cFileName))) {
+            success = false;
+            break;
+        }
+
+        if (!z_rm_recursive_internal(pb)) {
+            success = false;
+        }
+
+        pb->len = original_len;
+        if (!success) break;
+    } while (FindNextFileA(hFind, &fd));
+
+    FindClose(hFind);
+
+    if (success) {
+        success = (RemoveDirectoryA(cpath) != 0);
+    }
+
+    free(cpath);
+    return success;
+}
+
+bool z_rm_recursive(ZPathView path) {
+    if (path.len == 0) return false;
+    ZPathBuf pb;
+    if (!z_pathbuf_init_from(&pb, path)) return false;
+    bool res = z_rm_recursive_internal(&pb);
+    z_pathbuf_destroy(&pb);
+    return res;
+}
+
+bool z_file_exists(ZPathView path) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    DWORD attrs = GetFileAttributesA(cpath);
+    free(cpath);
+    return (attrs != INVALID_FILE_ATTRIBUTES);
+}
+
+ZFileType z_get_file_type(ZPathView path) {
+    if (path.len == 0) return Z_FILE_NOT_FOUND;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return Z_FILE_NOT_FOUND;
+
+    DWORD attrs = GetFileAttributesA(cpath);
+    free(cpath);
+    if (attrs == INVALID_FILE_ATTRIBUTES) return Z_FILE_NOT_FOUND;
+    if (attrs & FILE_ATTRIBUTE_REPARSE_POINT) return Z_FILE_SYMLINK;
+    if (attrs & FILE_ATTRIBUTE_DIRECTORY) return Z_FILE_DIR;
+    return Z_FILE_REGULAR;
 }
 
 bool z_set_executable(ZPathView path, bool enabled) {
