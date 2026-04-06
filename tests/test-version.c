@@ -68,8 +68,45 @@ void test_parse_invalid_at_only(void) {
     TEST_ASSERT_TRUE(z_zap_ver_is_null(v));
 }
 
-int main(void) {
+void test_format_commit_only(void) {
+    ZResolvableZapVersion v = { .branch = Z_SV_NULL, .commit = Z_SV("29be27b"), .build = Z_BUILD_RELEASE };
+    ZStringBuf sb;
+    z_strbuf_init(&sb);
+    z_format_zap_version(v, &sb);
+    TEST_ASSERT_EQUAL_SV(Z_SV("29be27b:release"), z_strbuf_view(&sb));
+    z_strbuf_destroy(&sb);
+}
+
+void test_format_branch_and_commit(void) {
+    ZResolvableZapVersion v = { .branch = Z_SV("main"), .commit = Z_SV("HEAD"), .build = Z_BUILD_RELEASE };
+    ZStringBuf sb;
+    z_strbuf_init(&sb);
+    z_format_zap_version(v, &sb);
+    TEST_ASSERT_EQUAL_SV(Z_SV("main@HEAD:release"), z_strbuf_view(&sb));
+    z_strbuf_destroy(&sb);
+}
+
+void test_format_commit_debug(void) {
+    ZResolvableZapVersion v = { .branch = Z_SV_NULL, .commit = Z_SV("c0200e9"), .build = Z_BUILD_DEBUG };
+    ZStringBuf sb;
+    z_strbuf_init(&sb);
+    z_format_zap_version(v, &sb);
+    TEST_ASSERT_EQUAL_SV(Z_SV("c0200e9:debug"), z_strbuf_view(&sb));
+    z_strbuf_destroy(&sb);
+}
+
+void test_format_branch_commit_debug(void) {
+    ZResolvableZapVersion v = { .branch = Z_SV("main"), .commit = Z_SV("HEAD"), .build = Z_BUILD_DEBUG };
+    ZStringBuf sb;
+    z_strbuf_init(&sb);
+    z_format_zap_version(v, &sb);
+    TEST_ASSERT_EQUAL_SV(Z_SV("main@HEAD:debug"), z_strbuf_view(&sb));
+    z_strbuf_destroy(&sb);
+}
+
+int main() {
     UNITY_BEGIN();
+    
     RUN_TEST(test_parse_commit_only);
     RUN_TEST(test_parse_branch_and_commit);
     RUN_TEST(test_parse_commit_release);
@@ -80,5 +117,11 @@ int main(void) {
     RUN_TEST(test_parse_invalid_suffix_only);
     RUN_TEST(test_parse_invalid_branch_only);
     RUN_TEST(test_parse_invalid_at_only);
+
+    RUN_TEST(test_format_commit_only);
+    RUN_TEST(test_format_branch_and_commit);
+    RUN_TEST(test_format_commit_debug);
+    RUN_TEST(test_format_branch_commit_debug);
+
     return UNITY_END();
 }
