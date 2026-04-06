@@ -1,6 +1,9 @@
 #pragma once
 
+#include <util/strbuf.h>
 #include <defs/sv.h>
+
+#include <stdbool.h>
 
 typedef enum ZBuildType {
     Z_BUILD_RELEASE,
@@ -20,3 +23,4 @@ static inline bool z_zap_ver_is_null(ZResolvableZapVersion v) {
 }
 
 ZResolvableZapVersion z_parse_zap_version(ZStringView s);
+bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out);
