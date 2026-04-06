@@ -13,6 +13,7 @@ void zapup_init(ZapupApp* app) {
     git_libgit2_init();
     z_paths_config_load(&app->paths);
     z_paths_ensure_exists(&app->paths);
+    z_version_index_init(&app->index);
     z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
 }
 
@@ -39,6 +40,7 @@ int zapup_do_install(ZapupApp* app) {
         z_pathbuf_destroy(&out_path);
         return 1;
     } else {
+        z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
         const ZCMakeZapBuildOptions opts = {
             .zap_root = z_pathbuf_as_view(&out_path),
             .ver = v,
@@ -82,6 +84,7 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 
 void zapup_destroy(ZapupApp* app) {
     z_version_index_save(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
+    z_version_index_free(&app->index);
     z_paths_config_destroy(&app->paths);
     git_libgit2_shutdown();
 }

@@ -84,7 +84,7 @@ bool z_paths_ensure_exists(ZPathsConfig* cfg) {
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))     return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config)))   return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions))) return false;
-    if (!z_mkfile(z_pathbuf_as_view(&cfg->indexfile)))   return false;
+    if (!z_mkfile_if_not_exists(z_pathbuf_as_view(&cfg->indexfile)))   return false;
     return true;
 }
 
