@@ -7,8 +7,10 @@
 #include <defs/int-types.h>
 
 typedef struct ZVersionIndexEntry {
-    ZResolvableZapVersion version;
-    ZPathView path;
+    ZStringBuf branch;
+    ZStringBuf commit;
+    ZBuildType build;
+    ZStringBuf path;
 } ZVersionIndexEntry;
 
 typedef struct ZVersionIndex {

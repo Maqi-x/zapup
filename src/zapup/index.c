@@ -16,6 +16,11 @@ void z_version_index_free(ZVersionIndex* idx) {
     if (idx->_ctx) {
         yyjson_doc_free((yyjson_doc*)idx->_ctx);
     }
+    for (usize i = 0; i < idx->len; i++) {
+        z_strbuf_destroy(&idx->entries[i].branch);
+        z_strbuf_destroy(&idx->entries[i].commit);
+        z_strbuf_destroy(&idx->entries[i].path);
+    }
     free(idx->entries);
     z_version_index_init(idx);
 }
@@ -25,10 +30,12 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
         idx->cap = idx->cap == 0 ? 8 : idx->cap * 2;
         idx->entries = realloc(idx->entries, idx->cap * sizeof(ZVersionIndexEntry));
     }
-    idx->entries[idx->len++] = (ZVersionIndexEntry){
-        .version = version,
-        .path = path,
-    };
+    
+    ZVersionIndexEntry* entry = &idx->entries[idx->len++];
+    z_strbuf_init_from(&entry->branch, version.branch);
+    z_strbuf_init_from(&entry->commit, version.commit);
+    entry->build = version.build;
+    z_strbuf_init_from(&entry->path, path);
 }
 
 void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
@@ -80,9 +87,9 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         yyjson_mut_val* obj = yyjson_mut_obj(doc);
-        yyjson_mut_obj_add_strn(doc, obj, "branch", entry->version.branch.data, entry->version.branch.len);
-        yyjson_mut_obj_add_strn(doc, obj, "commit", entry->version.commit.data, entry->version.commit.len);
-        yyjson_mut_obj_add_str(doc, obj, "build", entry->version.build == Z_BUILD_DEBUG ? "debug" : "release");
+        yyjson_mut_obj_add_strn(doc, obj, "branch", entry->branch.data, entry->branch.len);
+        yyjson_mut_obj_add_strn(doc, obj, "commit", entry->commit.data, entry->commit.len);
+        yyjson_mut_obj_add_str(doc, obj, "build", entry->build == Z_BUILD_DEBUG ? "debug" : "release");
         yyjson_mut_obj_add_strn(doc, obj, "path", entry->path.data, entry->path.len);
         yyjson_mut_arr_append(root, obj);
     }
