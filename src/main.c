@@ -1,45 +1,11 @@
-#include <zapup/cli/parse.h>
-#include <zapup/cli/args.h>
-
-#include <zapup/output.h>
-#include <zapup/clone.h>
+#include <zapup/app.h>
 
 int main(int argc, const char* const* argv) {
-    git_libgit2_init();
+    ZapupApp app; 
 
-    ZCliArgs args;
-    ZCliParseResult err = z_cli_parse_args(argc, argv, &args);
-    if (err.code != Z_CLI_PARSE_OK) {
-        z_show_error("cli parse error: %d", err.code);
-        return 1;
-    }
+    zapup_init(&app);
+    int code = zapup_run(&app, argc, argv);
+    zapup_destroy(&app);
 
-    switch (args.cmd) {
-    case Z_CLI_CMD_INSTALL: {
-        z_show_info("installing...");
-        ZResolvableZapVersion v = args.cmd_args.install.version;
-        git_repository* repo;
-        int res = z_clone_zap_repo_with_version(v, Z_PV("./out-repo"), &repo);
-        if (res != 0) {
-            const git_error* err = git_error_last();
-            z_show_error("%s", err->message);
-        }
-        git_repository_free(repo);
-        break;
-    }
-    case Z_CLI_CMD_UNINSTALL:
-        z_show_warn("uninstall: not implemented yet");
-        break;
-    case Z_CLI_CMD_SYNC:
-        z_show_warn("sync: not implemented yet");
-        break;
-    case Z_CLI_CMD_HELP:
-        z_show_warn("help: not implemented yet");
-        break;
-    case Z_CLI_CMD_UNKNOWN:
-        z_show_warn("unknown command");
-        break;
-    }
-
-    git_libgit2_shutdown();
+    return code;
 }
