@@ -19,12 +19,20 @@ ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
         v.commit.len -= 8;
     }
 
+    if (v.commit.len == 0) {
+        return Z_ZAP_VERSION_NULL;
+    }
+
     for (usize i = 0; i < v.commit.len; ++i) {
         if (v.commit.data[i] == '@') {
             v.branch = z_sv_slice(v.commit, 0, i);
             v.commit = z_sv_slice(v.commit, i + 1, v.commit.len);
             break;
         }
+    }
+
+    if (v.commit.len == 0) {
+        return Z_ZAP_VERSION_NULL;
     }
 
     return v;
