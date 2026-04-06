@@ -15,6 +15,45 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
+#include <limits.h>
+
+bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
+    if (path.len == 0) return false;
+
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    char* abs_path = realpath(cpath, NULL);
+    if (abs_path) {
+        z_strbuf_clear(out_abs);
+        bool success = z_strbuf_append(out_abs, z_sv_from_cstr(abs_path));
+        free(abs_path);
+        free(cpath);
+        return success;
+    }
+
+    if (z_pathview_is_absolute(path)) {
+        z_strbuf_clear(out_abs);
+        bool success = z_strbuf_append(out_abs, path);
+        free(cpath);
+        return success;
+    }
+
+    char cwd[4096];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        free(cpath);
+        return false;
+    }
+
+    z_strbuf_clear(out_abs);
+    if (!z_strbuf_append(out_abs, z_sv_from_cstr(cwd))) {
+        free(cpath);
+        return false;
+    }
+    bool success = z_pathbuf_join(out_abs, path);
+    free(cpath);
+    return success;
+}
 
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;

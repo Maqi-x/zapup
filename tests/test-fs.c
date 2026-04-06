@@ -86,6 +86,29 @@ void test_fs_set_executable(void) {
 #endif
 }
 
+void test_fs_path_abs(void) {
+    ZPathBuf abs;
+    z_pathbuf_init(&abs);
+
+    ZPathView rel = Z_PV(".");
+    TEST_ASSERT_TRUE(z_path_abs(rel, &abs));
+    TEST_ASSERT_TRUE(z_pathview_is_absolute(z_pathbuf_as_view(&abs)));
+
+    z_pathbuf_clear(&abs);
+    rel = Z_PV("test_file_that_does_not_exist");
+    TEST_ASSERT_TRUE(z_path_abs(rel, &abs));
+    TEST_ASSERT_TRUE(z_pathview_is_absolute(z_pathbuf_as_view(&abs)));
+
+    z_pathbuf_clear(&abs);
+    rel = Z_PV("include");
+    TEST_ASSERT_TRUE(z_path_abs(rel, &abs));
+    ZPathView abs_view = z_pathbuf_as_view(&abs);
+    TEST_ASSERT_TRUE(z_pathview_is_absolute(abs_view));
+    TEST_ASSERT_TRUE(z_sv_ends_with(abs_view, Z_SV("include")));
+
+    z_pathbuf_destroy(&abs);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_fs_mkdir_rm);
@@ -94,5 +117,6 @@ int main(void) {
     RUN_TEST(test_fs_touch);
     RUN_TEST(test_fs_rm_recursive);
     RUN_TEST(test_fs_set_executable);
+    RUN_TEST(test_fs_path_abs);
     return UNITY_END();
 }

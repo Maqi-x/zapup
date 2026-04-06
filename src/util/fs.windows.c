@@ -10,6 +10,43 @@
 #include <stdlib.h>
 #include <string.h>
 
+bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
+    if (path.len == 0) return false;
+
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    char buffer[MAX_PATH];
+    DWORD res = GetFullPathNameA(cpath, MAX_PATH, buffer, NULL);
+
+    if (res == 0) {
+        free(cpath);
+        return false;
+    }
+
+    if (res >= MAX_PATH) {
+        char* heap_buffer = malloc(res);
+        if (!heap_buffer) {
+            free(cpath);
+            return false;
+        }
+        DWORD res2 = GetFullPathNameA(cpath, res, heap_buffer, NULL);
+        free(cpath);
+        if (res2 == 0 || res2 >= res) {
+            free(heap_buffer);
+            return false;
+        }
+        z_strbuf_clear(out_abs);
+        bool success = z_strbuf_append(out_abs, z_sv_from_cstr(heap_buffer));
+        free(heap_buffer);
+        return success;
+    }
+
+    free(cpath);
+    z_strbuf_clear(out_abs);
+    return z_strbuf_append(out_abs, z_sv_from_cstr(buffer));
+}
+
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);

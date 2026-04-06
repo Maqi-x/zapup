@@ -1,6 +1,9 @@
 #pragma once
 
 #include <util/pathview.h>
+#include <util/pathbuf.h>
+
+bool z_path_abs(ZPathView path, ZPathBuf* out_abs);
 
 bool z_mkdir(ZPathView path);
 bool z_mkdir_all(ZPathView path);
