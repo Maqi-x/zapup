@@ -44,8 +44,6 @@ static inline bool z_sv_starts_with(ZStringView sv, ZStringView prefix) {
 
 static inline bool z_sv_ends_with(ZStringView sv, ZStringView suffix) {
     if (suffix.len > sv.len) return false;
-    if (suffix.len == sv.len) return memcmp(sv.data, suffix.data, sv.len);
-
     return memcmp(sv.data + (sv.len - suffix.len), suffix.data, suffix.len) == 0;
 }
 
@@ -56,7 +54,7 @@ static inline ZStringView z_sv_trim_prefix(ZStringView sv, ZStringView prefix) {
 
 static inline ZStringView z_sv_trim_suffix(ZStringView sv, ZStringView suffix) {
     if (!z_sv_ends_with(sv, suffix)) return sv;
-    return (ZStringView) { .data = sv.data, .len = suffix.len };
+    return (ZStringView) { .data = sv.data, .len = sv.len - suffix.len };
 }
 
 static inline ZStringView z_sv_trim_prefix_or_null(ZStringView sv, ZStringView prefix) {
@@ -66,7 +64,7 @@ static inline ZStringView z_sv_trim_prefix_or_null(ZStringView sv, ZStringView p
 
 static inline ZStringView z_sv_trim_suffix_or_null(ZStringView sv, ZStringView suffix) {
     if (!z_sv_ends_with(sv, suffix)) return Z_SV_NULL;
-    return (ZStringView) { .data = sv.data, .len = suffix.len };
+    return (ZStringView) { .data = sv.data, .len = sv.len - suffix.len };
 }
 
 static inline ZStringView z_sv_slice(ZStringView sv, usize start, usize end) {
