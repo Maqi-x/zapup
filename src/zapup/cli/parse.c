@@ -49,6 +49,38 @@ ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZResolvableZapVers
     return Z_CLI_PARSE_RESULT_OK;
 }
 
+ZCliParseResult z_cli_parse_jobs(ZStringView val, int* jobs) {
+    if (val.len > 0 && val.data[0] == '=') {
+        val = z_sv_slice(val, 1, val.len);
+    }
+
+    if (val.len == 0) {
+        *jobs = 0;
+        return Z_CLI_PARSE_RESULT_OK;
+    }
+
+    char buf[32];
+    if (val.len >= sizeof(buf)) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .ctx.str = val,
+        };
+    }
+    memcpy(buf, val.data, val.len);
+    buf[val.len] = '\0';
+
+    char* end;
+    long res = strtol(buf, &end, 10);
+    if (*end != '\0' || res < 0) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .ctx.str = val,
+        };
+    }
+    *jobs = (int)res;
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
 ZCliParseResult z_cli_unexpected_arg(ZStringView arg) {
     return (ZCliParseResult) {
         .code = Z_CLI_PARSE_UNEXPECTED_ARG,
@@ -93,6 +125,16 @@ ZCliParseResult z_cli_handle_global_arg(ZStringView arg, ZCliArgs* out) {
 ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
+        if (z_sv_eql(flag, Z_SV("parallel"))) {
+            out->cmd_args.install.parallel = true;
+            out->cmd_args.install.max_jobs = 0;
+            return Z_CLI_PARSE_RESULT_OK;
+        }
+        if (z_sv_starts_with(flag, Z_SV("parallel="))) {
+            out->cmd_args.install.parallel = true;
+            ZStringView val = z_sv_trim_prefix(flag, Z_SV("parallel="));
+            return z_cli_parse_jobs(val, &out->cmd_args.install.max_jobs);
+        }
         return z_cli_unknown_long_flag(flag);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_unknown_long_flag(flag);
@@ -106,9 +148,19 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     return Z_CLI_PARSE_RESULT_OK;
 }
 
-ZCliParseResult z_cli_handle_cmd_short_flag(char flag, ZCliArgs* out) {
+ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArgs* out) {
+    char flag = flags.data[*i];
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
+        if (flag == 'j') {
+            out->cmd_args.install.parallel = true;
+            ZStringView val = z_sv_slice(flags, *i + 1, flags.len);
+            ZCliParseResult res = z_cli_parse_jobs(val, &out->cmd_args.install.max_jobs);
+            if (res.code == Z_CLI_PARSE_OK) {
+                *i = flags.len;
+            }
+            return res;
+        }
         return z_cli_unknown_short_flag(flag);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_unknown_short_flag(flag);
@@ -152,11 +204,12 @@ ZCliParseResult z_cli_handle_long_flag(ZStringView flag, ZCliArgs* out) {
     return res;
 }
 
-ZCliParseResult z_cli_handle_short_flag(char flag, ZCliArgs* out) {
+ZCliParseResult z_cli_handle_short_flag(ZStringView flags, usize* i, ZCliArgs* out) {
+    char flag = flags.data[*i];
     if (out->cmd == Z_CLI_CMD_UNKNOWN) {
         return z_cli_handle_global_short_flag(flag, out);
     }
-    ZCliParseResult res = z_cli_handle_cmd_short_flag(flag, out);
+    ZCliParseResult res = z_cli_handle_cmd_short_flag(flags, i, out);
     if (res.code == Z_CLI_PARSE_UNKNOWN_SHORT_FLAG) {
         return z_cli_handle_global_short_flag(flag, out);
     }
@@ -184,6 +237,8 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     switch (cmd) {
     case Z_CLI_CMD_INSTALL:
         out->cmd_args.install.version = Z_ZAP_VERSION_NULL;
+        out->cmd_args.install.parallel = false;
+        out->cmd_args.install.max_jobs = 0;
         break;
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
@@ -247,8 +302,8 @@ ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* ou
             Z_CLI_HANDLE_ERR(err);
         } else if (z_cli_is_short_flag(arg)) {
             ZStringView flags = z_sv_trim_prefix(arg, Z_SV("-"));
-            for (usize i = 0; i < flags.len; ++i) {
-                ZCliParseResult err = z_cli_handle_short_flag(flags.data[i], out);
+            for (usize j = 0; j < flags.len; ++j) {
+                ZCliParseResult err = z_cli_handle_short_flag(flags, &j, out);
                 Z_CLI_HANDLE_ERR(err);
             }
         } else {

@@ -11,7 +11,9 @@ typedef enum ZCliCommand {
 } ZCliCommand;
 
 typedef struct ZCliInstallArgs {
-    ZResolvableZapVersion version;    
+    ZResolvableZapVersion version;
+    bool parallel;
+    int max_jobs; // 0 means no limit if parallel is true
 } ZCliInstallArgs;
 
 typedef struct ZCliSyncArgs {
