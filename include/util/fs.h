@@ -2,8 +2,10 @@
 
 #include <util/pathview.h>
 #include <util/pathbuf.h>
+#include <util/strbuf.h>
 
 bool z_path_abs(ZPathView path, ZPathBuf* out_abs);
+bool z_read_file(ZPathView path, ZStringBuf* out);
 
 bool z_mkdir(ZPathView path);
 bool z_mkdir_all(ZPathView path);

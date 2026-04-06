@@ -55,6 +55,42 @@ bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
     return success;
 }
 
+bool z_read_file(ZPathView path, ZStringBuf* out) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    int fd = open(cpath, O_RDONLY);
+    free(cpath);
+    if (fd == -1) return false;
+
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
+        close(fd);
+        return false;
+    }
+
+    if (!S_ISREG(st.st_mode)) {
+        close(fd);
+        return false;
+    }
+
+    usize size = (usize)st.st_size;
+    if (!z_strbuf_resize(out, size)) {
+        close(fd);
+        return false;
+    }
+
+    ssize_t nread = read(fd, out->data, size);
+    close(fd);
+
+    if (nread == -1 || (usize)nread != size) {
+        return false;
+    }
+
+    return true;
+}
+
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);

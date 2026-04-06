@@ -47,6 +47,37 @@ bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
     return z_strbuf_append(out_abs, z_sv_from_cstr(buffer));
 }
 
+bool z_read_file(ZPathView path, ZStringBuf* out) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    HANDLE hFile = CreateFileA(cpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    free(cpath);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+
+    LARGE_INTEGER size;
+    if (!GetFileSizeEx(hFile, &size)) {
+        CloseHandle(hFile);
+        return false;
+    }
+
+    if (!z_strbuf_resize(out, (usize)size.QuadPart)) {
+        CloseHandle(hFile);
+        return false;
+    }
+
+    DWORD nread;
+    BOOL res = ReadFile(hFile, out->data, (DWORD)size.QuadPart, &nread, NULL);
+    CloseHandle(hFile);
+
+    if (!res || nread != (DWORD)size.QuadPart) {
+        return false;
+    }
+
+    return true;
+}
+
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);
