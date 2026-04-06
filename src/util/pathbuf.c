@@ -79,3 +79,37 @@ bool z_pathbuf_set_ext(ZPathBuf* pb, ZPathView ext) {
 
     return true;
 }
+
+void z_pathbuf_sanitize(ZPathBuf* pb) {
+    usize start = 0;
+#if Z_PLATFORM_IS_WINDOWS
+    if (pb->len >= 2 && pb->data[1] == ':' && 
+        ((pb->data[0] >= 'a' && pb->data[0] <= 'z') || (pb->data[0] >= 'A' && pb->data[0] <= 'Z'))) {
+        start = 2;
+    }
+#endif
+
+    for (usize i = start; i < pb->len; i++) {
+        char c = pb->data[i];
+        if (Z_IS_PATH_SEP(c)) continue;
+
+        switch (c) {
+        case '<':
+        case '>':
+        case ':':
+        case '"':
+        case '|':
+        case '?':
+        case '*':
+            pb->data[i] = '-';
+            break;
+        default:
+            if ((unsigned char)c < 32) {
+                pb->data[i] = '-';
+            } else if (!Z_PLATFORM_IS_WINDOWS && c == '\\') {
+                pb->data[i] = '-';
+            }
+            break;
+        }
+    }
+}

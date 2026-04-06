@@ -31,4 +31,6 @@ bool z_pathbuf_append(ZPathBuf* pb, ZPathView pv);
 bool z_pathbuf_pop(ZPathBuf* pb);
 bool z_pathbuf_set_ext(ZPathBuf* pb, ZPathView ext);
 
+void z_pathbuf_sanitize(ZPathBuf* pb);
+
 bool z_pathbuf_init_from_parts(ZPathBuf* pb, ZPathViewArray parts);
