@@ -8,6 +8,8 @@ typedef struct ZPathsConfig {
     ZPathBuf cache;
     ZPathBuf config;
     ZPathBuf versions;
+
+    ZPathBuf indexfile;
 } ZPathsConfig;
 
 bool z_paths_config_load(ZPathsConfig* cfg);
