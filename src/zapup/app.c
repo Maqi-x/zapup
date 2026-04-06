@@ -12,6 +12,7 @@ void zapup_init(ZapupApp* app) {
     git_libgit2_init();
     z_paths_config_load(&app->paths);
     z_paths_ensure_exists(&app->paths);
+    z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
 }
 
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
@@ -54,6 +55,7 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 }
 
 void zapup_destroy(ZapupApp* app) {
+    z_version_index_save(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_paths_config_destroy(&app->paths);
     git_libgit2_shutdown();
 }
