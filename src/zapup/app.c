@@ -9,8 +9,9 @@
 #include <git2.h>
 
 void zapup_init(ZapupApp* app) {
-    (void) app;
     git_libgit2_init();
+    z_paths_config_load(&app->paths);
+    z_paths_ensure_exists(&app->paths);
 }
 
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
@@ -53,6 +54,6 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 }
 
 void zapup_destroy(ZapupApp* app) {
-    (void) app;
+    z_paths_config_destroy(&app->paths);
     git_libgit2_shutdown();
 }

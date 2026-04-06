@@ -1,9 +1,11 @@
 #pragma once
 
 #include <zapup/cli/args.h>
+#include <zapup/storage.h>
 
 typedef struct ZapupApp {
     ZCliArgs args;
+    ZPathsConfig paths;
 } ZapupApp;
 
 void zapup_init(ZapupApp* app);
