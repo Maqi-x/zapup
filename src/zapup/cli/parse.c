@@ -183,6 +183,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     }
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
+    z_cli_apply_defaults(out);
     for (usize i = 1; i < (usize)argc; ++i) {
         ZCliCommand cmd_old = out->cmd;
         ZStringView arg = z_sv_from_cstr(argv[i]);
