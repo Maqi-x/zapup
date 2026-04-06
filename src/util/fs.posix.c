@@ -91,6 +91,21 @@ bool z_read_file(ZPathView path, ZStringBuf* out) {
     return true;
 }
 
+bool z_write_file(ZPathView path, ZStringView content) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    int fd = open(cpath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    free(cpath);
+    if (fd == -1) return false;
+
+    ssize_t nwritten = write(fd, content.data, content.len);
+    close(fd);
+
+    return nwritten != -1 && (usize)nwritten == content.len;
+}
+
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);

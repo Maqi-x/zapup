@@ -6,6 +6,7 @@
 
 bool z_path_abs(ZPathView path, ZPathBuf* out_abs);
 bool z_read_file(ZPathView path, ZStringBuf* out);
+bool z_write_file(ZPathView path, ZStringView content);
 
 bool z_mkdir(ZPathView path);
 bool z_mkdir_all(ZPathView path);

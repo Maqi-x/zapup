@@ -78,6 +78,22 @@ bool z_read_file(ZPathView path, ZStringBuf* out) {
     return true;
 }
 
+bool z_write_file(ZPathView path, ZStringView content) {
+    if (path.len == 0) return false;
+    char* cpath = z_sv_to_cstr_alloc(path);
+    if (!cpath) return false;
+
+    HANDLE hFile = CreateFileA(cpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    free(cpath);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+
+    DWORD nwritten;
+    BOOL res = WriteFile(hFile, content.data, (DWORD)content.len, &nwritten, NULL);
+    CloseHandle(hFile);
+
+    return res && nwritten == (DWORD)content.len;
+}
+
 bool z_mkdir(ZPathView path) {
     if (path.len == 0) return false;
     char* cpath = z_sv_to_cstr_alloc(path);
