@@ -3,9 +3,9 @@
 #include <util/cmd.h>
 #include <util/fs.h>
 
-ZCMakeZapBuildResult z_cmake_build_zap(ZPathView zap_root, ZResolvableZapVersion ver) {
+ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZPathBuf build_dir_buf;
-    z_pathbuf_init_from(&build_dir_buf, zap_root);
+    z_pathbuf_init_from(&build_dir_buf, opts->zap_root);
     z_pathbuf_join(&build_dir_buf, Z_PV("build"));
 
     ZPathView build_dir = z_pathbuf_as_view(&build_dir_buf);
@@ -15,7 +15,7 @@ ZCMakeZapBuildResult z_cmake_build_zap(ZPathView zap_root, ZResolvableZapVersion
 
     ZStringBuf build_type_arg;
     z_strbuf_init_from(&build_type_arg, Z_SV("-DCMAKE_BUILD_TYPE="));
-    z_strbuf_append(&build_type_arg, ver.build == Z_BUILD_DEBUG ? Z_SV("Debug") : Z_SV("Release"));
+    z_strbuf_append(&build_type_arg, opts->ver.build == Z_BUILD_DEBUG ? Z_SV("Debug") : Z_SV("Release"));
 
     ZStringBuf capture;
     z_strbuf_init(&capture);
@@ -23,7 +23,7 @@ ZCMakeZapBuildResult z_cmake_build_zap(ZPathView zap_root, ZResolvableZapVersion
 
     ZCommand configure_cmd = {0};
     configure_cmd.argv = Z_STRING_VIEWS(
-        Z_SV("cmake"), zap_root,
+        Z_SV("cmake"), opts->zap_root,
         z_strbuf_view(&build_type_arg),
         Z_SV("-DZAP_BUILD_REFERENCE=OFF"),
         Z_SV("-DCMAKE_CXX_FLAGS=-w"),

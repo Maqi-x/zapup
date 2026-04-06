@@ -14,4 +14,9 @@ typedef struct ZCMakeZapBuildResult {
     ZCMakeZapBuildErrorCode code;
 } ZCMakeZapBuildResult;
 
-ZCMakeZapBuildResult z_cmake_build_zap(ZPathView zap_root, ZResolvableZapVersion ver);
+typedef struct ZCMakeZapBuildOptions {
+    ZPathView zap_root;
+    ZResolvableZapVersion ver;
+} ZCMakeZapBuildOptions;
+
+ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts);

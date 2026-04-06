@@ -38,7 +38,11 @@ int zapup_do_install(ZapupApp* app) {
         z_pathbuf_destroy(&out_path);
         return 1;
     } else {
-        z_cmake_build_zap(z_pathbuf_as_view(&out_path), v);
+        const ZCMakeZapBuildOptions opts = {
+            .zap_root = z_pathbuf_as_view(&out_path),
+            .ver = v,
+        };
+        z_cmake_build_zap(&opts);
 
         z_pathbuf_destroy(&out_path);
         git_repository_free(repo);
