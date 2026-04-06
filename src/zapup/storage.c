@@ -80,3 +80,10 @@ bool z_paths_ensure_exists(ZPathsConfig* cfg) {
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions))) return false;
     return true;
 }
+
+void z_paths_config_destroy(ZPathsConfig* cfg) {
+    z_pathbuf_destroy(&cfg->data);
+    z_pathbuf_destroy(&cfg->cache);
+    z_pathbuf_destroy(&cfg->config);
+    z_pathbuf_destroy(&cfg->versions);
+}
