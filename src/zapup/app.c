@@ -15,6 +15,33 @@ void zapup_init(ZapupApp* app) {
     z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
 }
 
+int zapup_do_install(ZapupApp* app) {
+    ZResolvableZapVersion v = app->args.cmd_args.install.version;
+    git_repository* repo;
+    
+    ZStringBuf version_formatted;
+    z_format_zap_version(v, &version_formatted);
+
+    ZPathBuf out_path;
+    z_pathbuf_init_from(&out_path, z_pathbuf_as_view(&app->paths.versions));
+    z_pathbuf_join(&out_path, z_strbuf_view(&version_formatted));
+    z_pathbuf_sanitize(&out_path);
+
+    z_strbuf_destroy(&version_formatted);
+    z_show_info("installing to %.*s...", (int) out_path.len, out_path.data);
+
+    int res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
+    z_pathbuf_destroy(&out_path);
+    if (res != 0) {
+        const git_error* err = git_error_last();
+        z_show_error("%s", err->message);
+        return 1;
+    } else {
+        git_repository_free(repo);
+    }
+    return 0;
+}
+
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     ZCliParseResult err = z_cli_parse_args(argc, argv, &app->args);
     if (err.code != Z_CLI_PARSE_OK) {
@@ -23,20 +50,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     }
 
     switch (app->args.cmd) {
-    case Z_CLI_CMD_INSTALL: {
-        z_show_info("installing...");
-        ZResolvableZapVersion v = app->args.cmd_args.install.version;
-        git_repository* repo;
-        int res = z_clone_zap_repo_with_version(v, Z_PV("./out-repo"), &repo);
-        if (res != 0) {
-            const git_error* err = git_error_last();
-            z_show_error("%s", err->message);
-            return 1;
-        } else {
-            git_repository_free(repo);
-        }
-        break;
-    }
+    case Z_CLI_CMD_INSTALL:
+        return zapup_do_install(app);
     case Z_CLI_CMD_UNINSTALL:
         z_show_warn("uninstall: not implemented yet");
         break;
