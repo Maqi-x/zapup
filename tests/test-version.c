@@ -1,0 +1,68 @@
+#include <unity.h>
+#include <zapup/version.h>
+
+#define TEST_ASSERT_EQUAL_SV(expected, actual) \
+    do { \
+        ZStringView _exp = (expected); \
+        ZStringView _act = (actual); \
+        TEST_ASSERT_EQUAL_UINT_MESSAGE(_exp.len, _act.len, "ZStringView length mismatch"); \
+        if (_exp.len > 0) { \
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(_exp.data, _act.data, _exp.len, "ZStringView data mismatch"); \
+        } \
+    } while (0)
+
+void setUp(void) {}
+void tearDown(void) {}
+
+void test_parse_commit_only(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("29be27b"));
+    TEST_ASSERT_TRUE(z_sv_is_null(v.branch));
+    TEST_ASSERT_EQUAL_SV(Z_SV("29be27b"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
+}
+
+void test_parse_branch_and_commit(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("main@HEAD"));
+    TEST_ASSERT_EQUAL_SV(Z_SV("main"), v.branch);
+    TEST_ASSERT_EQUAL_SV(Z_SV("HEAD"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
+}
+
+void test_parse_commit_release(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("7891981:release"));
+    TEST_ASSERT_TRUE(z_sv_is_null(v.branch));
+    TEST_ASSERT_EQUAL_SV(Z_SV("7891981"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
+}
+
+void test_parse_commit_debug(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("c0200e9:debug"));
+    TEST_ASSERT_TRUE(z_sv_is_null(v.branch));
+    TEST_ASSERT_EQUAL_SV(Z_SV("c0200e9"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_DEBUG, v.build);
+}
+
+void test_parse_branch_commit_debug(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("main@HEAD:debug"));
+    TEST_ASSERT_EQUAL_SV(Z_SV("main"), v.branch);
+    TEST_ASSERT_EQUAL_SV(Z_SV("HEAD"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_DEBUG, v.build);
+}
+
+void test_parse_branch_commit_release(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("feat@ea1f166:release"));
+    TEST_ASSERT_EQUAL_SV(Z_SV("feat"), v.branch);
+    TEST_ASSERT_EQUAL_SV(Z_SV("ea1f166"), v.commit);
+    TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
+}
+
+int main(void) {
+    UNITY_BEGIN();
+    RUN_TEST(test_parse_commit_only);
+    RUN_TEST(test_parse_branch_and_commit);
+    RUN_TEST(test_parse_commit_release);
+    RUN_TEST(test_parse_commit_debug);
+    RUN_TEST(test_parse_branch_commit_debug);
+    RUN_TEST(test_parse_branch_commit_release);
+    return UNITY_END();
+}
