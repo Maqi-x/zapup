@@ -51,6 +51,22 @@ void test_fs_mkfile(void) {
     TEST_ASSERT_FALSE(z_file_exists(path));
 }
 
+void test_fs_read_write_file(void) {
+    ZPathView path = Z_PV(TEST_DIR "/rw_file.txt");
+    ZStringView content = Z_SV("hello world\nthis is a test");
+    
+    TEST_ASSERT_TRUE(z_write_file(path, content));
+    TEST_ASSERT_TRUE(z_file_exists(path));
+    
+    ZStringBuf read_buf;
+    z_strbuf_init(&read_buf);
+    
+    TEST_ASSERT_TRUE(z_read_file(path, &read_buf));
+    TEST_ASSERT_TRUE(z_strbuf_eql_to(&read_buf, content));
+    
+    z_strbuf_destroy(&read_buf);
+}
+
 void test_fs_touch(void) {
     ZPathView path = Z_PV(TEST_DIR "/touch_me");
     TEST_ASSERT_FALSE(z_file_exists(path));
@@ -114,6 +130,7 @@ int main(void) {
     RUN_TEST(test_fs_mkdir_rm);
     RUN_TEST(test_fs_mkdir_all);
     RUN_TEST(test_fs_mkfile);
+    RUN_TEST(test_fs_read_write_file);
     RUN_TEST(test_fs_touch);
     RUN_TEST(test_fs_rm_recursive);
     RUN_TEST(test_fs_set_executable);
