@@ -1,4 +1,6 @@
 #include <zapup/index.h>
+#include <util/fs.h>
+
 #include <yyjson.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,5 +98,31 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
     }
 
     yyjson_mut_doc_free(doc);
+    return ok;
+}
+
+bool z_version_index_load(ZVersionIndex* idx, ZPathView path) {
+    ZStringBuf content;
+    z_strbuf_init(&content);
+    if (!z_read_file(path, &content)) {
+        z_strbuf_destroy(&content);
+        return false;
+    }
+
+    z_version_index_from_json(idx, z_strbuf_view(&content));
+    z_strbuf_destroy(&content);
+    return true;
+}
+
+bool z_version_index_save(ZVersionIndex* idx, ZPathView path) {
+    ZStringBuf json;
+    z_strbuf_init(&json);
+    if (!z_version_index_to_json(idx, &json)) {
+        z_strbuf_destroy(&json);
+        return false;
+    }
+
+    bool ok = z_write_file(path, z_strbuf_view(&json));
+    z_strbuf_destroy(&json);
     return ok;
 }

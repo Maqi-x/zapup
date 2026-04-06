@@ -24,3 +24,7 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
 
 void z_version_index_from_json(ZVersionIndex* idx, ZStringView json);
 bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out);
+
+bool z_version_index_load(ZVersionIndex* idx, ZPathView path);
+bool z_version_index_save(ZVersionIndex* idx, ZPathView path);
+
