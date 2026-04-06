@@ -47,12 +47,22 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
     while ((val = yyjson_arr_iter_next(&iter))) {
         yyjson_val* v_branch = yyjson_obj_get(val, "branch");
         yyjson_val* v_commit = yyjson_obj_get(val, "commit");
+        yyjson_val* v_build = yyjson_obj_get(val, "build");
         yyjson_val* v_path = yyjson_obj_get(val, "path");
 
         if (v_branch && v_commit && v_path) {
+            ZBuildType build = Z_BUILD_RELEASE;
+            if (v_build) {
+                const char* bstr = yyjson_get_str(v_build);
+                if (bstr && strcmp(bstr, "debug") == 0) {
+                    build = Z_BUILD_DEBUG;
+                }
+            }
+
             ZResolvableZapVersion ver = {
                 .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
                 .commit = z_sv_from_data_and_len(yyjson_get_str(v_commit), yyjson_get_len(v_commit)),
+                .build = build,
             };
             ZPathView path = z_sv_from_data_and_len(yyjson_get_str(v_path), yyjson_get_len(v_path));
             z_version_index_add(idx, ver, path);
@@ -70,6 +80,7 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
         yyjson_mut_val* obj = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_strn(doc, obj, "branch", entry->version.branch.data, entry->version.branch.len);
         yyjson_mut_obj_add_strn(doc, obj, "commit", entry->version.commit.data, entry->version.commit.len);
+        yyjson_mut_obj_add_str(doc, obj, "build", entry->version.build == Z_BUILD_DEBUG ? "debug" : "release");
         yyjson_mut_obj_add_strn(doc, obj, "path", entry->path.data, entry->path.len);
         yyjson_mut_arr_append(root, obj);
     }
