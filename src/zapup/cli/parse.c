@@ -174,6 +174,36 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     }
 }
 
+ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
+    switch (args->cmd) {
+    case Z_CLI_CMD_UNKNOWN:
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_COMMAND_EXPECTED,
+        };
+    case Z_CLI_CMD_INSTALL:
+        if (z_zap_ver_is_null(args->cmd_args.install.version)) {
+            return (ZCliParseResult) {
+                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+                .ctx.str = Z_SV("version"),
+            };
+        }
+        break;
+    case Z_CLI_CMD_UNINSTALL:
+        if (z_zap_ver_is_null(args->cmd_args.uninstall.version)) {
+            return (ZCliParseResult) {
+                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+                .ctx.str = Z_SV("version"),
+            };
+        }
+        break;
+    case Z_CLI_CMD_SYNC:
+        break;
+    case Z_CLI_CMD_HELP:
+        break;
+    }
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
 #define Z_CLI_HANDLE_ERR(ERR)               \
     if ((ERR).code == _Z_CLI_PARSE_STOP) {  \
         return Z_CLI_PARSE_RESULT_OK;       \
@@ -204,5 +234,6 @@ ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* ou
             z_cli_apply_command_defaults(out->cmd, out);
         }
     }
+    Z_CLI_HANDLE_ERR(z_cli_validate_args(out));
     return Z_CLI_PARSE_RESULT_OK;
 }
