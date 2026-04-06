@@ -19,7 +19,7 @@ $(UNITY_OBJ): $(UNITY_DIR)/unity.c
 	$(CC) $(TESTS_CFLAGS) -c $< -o $@
 
 $(TESTS_OUT_DIR)/%$(EXE_EXT): $(TESTS_DIR)/%.c $(LIB_OBJ_STATIC) $(UNITY_OBJ) | test-dirs
-	$(CC) $(TESTS_CFLAGS) $< $(LIB_OBJ_STATIC) $(UNITY_OBJ) $(LDFLAGS) -o $@
+	$(CC) $(TESTS_CFLAGS) $< $(LIB_OBJ_STATIC) $(UNITY_OBJ) $(EXT_LIBS) $(LDFLAGS) -o $@
 
 test: $(TESTS_BINS)
 	$(foreach t,$(TESTS_BINS),$(call FIXPATH,$(t)) &&) echo "All tests passed."
