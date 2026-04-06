@@ -60,16 +60,23 @@ bool z_paths_find_config_dir(ZPathBuf* out) {
 
 #endif
 
+bool z_paths_find_versions_dir(ZPathBuf* out) {
+    if (!z_paths_find_data_dir(out)) return false;
+    return z_pathbuf_join(out, Z_PV("versions"));
+}
+
 bool z_paths_config_load(ZPathsConfig* cfg) {
-    if (!z_paths_find_config_dir(&cfg->config)) return false;
-    if (!z_paths_find_data_dir(&cfg->data))     return false;
-    if (!z_paths_find_cache_dir(&cfg->cache))   return false;
+    if (!z_paths_find_config_dir(&cfg->config))  return false;
+    if (!z_paths_find_data_dir(&cfg->data))      return false;
+    if (!z_paths_find_cache_dir(&cfg->cache))    return false;
+    if (!z_paths_find_versions_dir(&cfg->cache)) return false;
     return true;
 }
 
 bool z_paths_ensure_exists(ZPathsConfig* cfg) {
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->cache)))  return false;
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))   return false;
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config))) return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->cache)))    return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))     return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config)))   return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions))) return false;
     return true;
 }
