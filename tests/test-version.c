@@ -48,6 +48,26 @@ void test_parse_branch_commit_release(void) {
     TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
 }
 
+void test_parse_invalid_empty(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV(""));
+    TEST_ASSERT_TRUE(z_zap_ver_is_null(v));
+}
+
+void test_parse_invalid_suffix_only(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV(":debug"));
+    TEST_ASSERT_TRUE(z_zap_ver_is_null(v));
+}
+
+void test_parse_invalid_branch_only(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("main@"));
+    TEST_ASSERT_TRUE(z_zap_ver_is_null(v));
+}
+
+void test_parse_invalid_at_only(void) {
+    ZResolvableZapVersion v = z_parse_zap_version(Z_SV("@"));
+    TEST_ASSERT_TRUE(z_zap_ver_is_null(v));
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_parse_commit_only);
@@ -56,5 +76,9 @@ int main(void) {
     RUN_TEST(test_parse_commit_debug);
     RUN_TEST(test_parse_branch_commit_debug);
     RUN_TEST(test_parse_branch_commit_release);
+    RUN_TEST(test_parse_invalid_empty);
+    RUN_TEST(test_parse_invalid_suffix_only);
+    RUN_TEST(test_parse_invalid_branch_only);
+    RUN_TEST(test_parse_invalid_at_only);
     return UNITY_END();
 }
