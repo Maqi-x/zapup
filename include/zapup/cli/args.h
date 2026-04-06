@@ -23,7 +23,7 @@ typedef struct ZCliUninstallArgs {
 } ZCliUninstallArgs;
 
 typedef struct ZCliHelpArgs {
-    
+    ZCliCommand target;
 } ZCliHelpArgs;
 
 
