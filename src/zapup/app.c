@@ -29,8 +29,10 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
         if (res != 0) {
             const git_error* err = git_error_last();
             z_show_error("%s", err->message);
+            return 1;
+        } else {
+            git_repository_free(repo);
         }
-        git_repository_free(repo);
         break;
     }
     case Z_CLI_CMD_UNINSTALL:
