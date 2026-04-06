@@ -73,13 +73,16 @@ LIB_OBJ_STATIC := $(patsubst %.c,$(OBJ_ROOT_DIR)/%.o,$(LIB_C_SRCS))
 
 DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
-.PHONY: all dirs clean run install uninstall test
+.PHONY: all dirs submodules clean run install uninstall test
 
 all: dirs $(TARGET)
 
 -include external/yyjson.mk
 -include external/libgit2.mk
 -include tests/build.mk
+
+submodules:
+	git submodule update --init --recursive
 
 dirs:
 	$(call MKDIR,$(BIN_DIR))
