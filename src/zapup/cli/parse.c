@@ -69,39 +69,25 @@ ZCliParseResult z_cli_unknown_short_flag(char flag) {
 }
 
 ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
-    if (z_sv_eql(flag, Z_SV("help"))) {
-        out->cmd = Z_CLI_CMD_HELP;
-        return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
-    }
+    (void) out;
     return z_cli_unknown_long_flag(flag);
 }
 
 ZCliParseResult z_cli_handle_global_short_flags(ZStringView flags, ZCliArgs* out) {
-    for (usize i = 0; i < flags.len; ++i) {
-        char flag = flags.data[i];
-        switch (flag) {
-        case 'h':
-            out->cmd = Z_CLI_CMD_HELP;
-            return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
-        default:
-            return (ZCliParseResult) {
-                .code = Z_CLI_PARSE_UNKNOWN_SHORT_FLAG,
-                .ctx.c = flag,
-            };
-        }
-    }
-    return Z_CLI_PARSE_RESULT_OK;
+    (void) out;
+    return z_cli_unknown_short_flag(flags.data[0]);
 }
 
 ZCliParseResult z_cli_handle_global_arg(ZStringView arg, ZCliArgs* out) {
-    ZCliParseResult err = z_find_cmd_from_arg(arg, &out->cmd);
-    if (err.code != Z_CLI_PARSE_OK){
-        return err;
-    }
-    return Z_CLI_PARSE_RESULT_OK;
+    return z_find_cmd_from_arg(arg, &out->cmd);
 }
 
 ZCliParseResult z_cli_handle_long_flag(ZStringView flag, ZCliArgs* out) {
+    if (z_sv_eql(flag, Z_SV("help"))) {
+        out->cmd_args.help.target = out->cmd;
+        out->cmd = Z_CLI_CMD_HELP;
+        return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
+    }
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
         return z_cli_unknown_long_flag(flag);
@@ -118,6 +104,14 @@ ZCliParseResult z_cli_handle_long_flag(ZStringView flag, ZCliArgs* out) {
 }
 
 ZCliParseResult z_cli_handle_short_flags(ZStringView flags, ZCliArgs* out) {
+    for (usize i = 0; i < flags.len; ++i) {
+        if (flags.data[i] == 'h') {
+            out->cmd_args.help.target = out->cmd;
+            out->cmd = Z_CLI_CMD_HELP;
+            return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
+        }
+    }
+
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
         return z_cli_unknown_short_flag(flags.data[0]);
@@ -142,7 +136,10 @@ ZCliParseResult z_cli_handle_arg(ZStringView arg, ZCliArgs* out) {
     case Z_CLI_CMD_SYNC:
         return z_cli_unexpected_arg(arg);
     case Z_CLI_CMD_HELP:
-        return z_cli_unexpected_arg(arg);
+        if (out->cmd_args.help.target != Z_CLI_CMD_UNKNOWN) {
+            return z_cli_unexpected_arg(arg);
+        }
+        return z_find_cmd_from_arg(arg, &out->cmd_args.help.target);
     case Z_CLI_CMD_UNKNOWN:
         return z_cli_handle_global_arg(arg, out);
     }
@@ -170,7 +167,8 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     case Z_CLI_CMD_SYNC:
         break;
     case Z_CLI_CMD_HELP:
-        break;
+       out->cmd_args.help.target = Z_CLI_CMD_UNKNOWN; 
+       break;
     case Z_CLI_CMD_UNKNOWN:
         Z_UNREACHABLE("z_cli_apply_command_defaults() should not be called with Z_CLI_CMD_UNKNOWN parameter");
     }
@@ -181,7 +179,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         return Z_CLI_PARSE_RESULT_OK;       \
     }                                       \
     if ((ERR).code != Z_CLI_PARSE_OK) {     \
-        return err;                         \
+        return (ERR);                       \
     }
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
