@@ -2,9 +2,15 @@
 
 #include <defs/sv.h>
 
+typedef enum ZBuildType {
+    Z_BUILD_RELEASE,
+    Z_BUILD_DEBUG,
+} ZBuildType;
+
 typedef struct ZResolvableZapVersion {
     ZStringView branch;
     ZStringView commit;
+    ZBuildType build;
 } ZResolvableZapVersion;
 
 #define Z_ZAP_VERSION_NULL ((ZResolvableZapVersion) { .branch = Z_SV_NULL, .commit = Z_SV_NULL })
