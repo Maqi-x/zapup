@@ -4,6 +4,7 @@
 #include <zapup/cli/parse.h>
 
 #include <zapup/clone.h>
+#include <zapup/build.h>
 #include <zapup/output.h>
 
 #include <git2.h>
@@ -31,12 +32,15 @@ int zapup_do_install(ZapupApp* app) {
     z_show_info("installing to %.*s...", (int) out_path.len, out_path.data);
 
     int res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
-    z_pathbuf_destroy(&out_path);
     if (res != 0) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
+        z_pathbuf_destroy(&out_path);
         return 1;
     } else {
+        z_cmake_build_zap(z_pathbuf_as_view(&out_path), v);
+
+        z_pathbuf_destroy(&out_path);
         git_repository_free(repo);
     }
     return 0;
