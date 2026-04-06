@@ -21,6 +21,7 @@ int zapup_do_install(ZapupApp* app) {
     git_repository* repo;
     
     ZStringBuf version_formatted;
+    z_strbuf_init(&version_formatted);
     z_format_zap_version(v, &version_formatted);
 
     ZPathBuf out_path;
@@ -41,6 +42,8 @@ int zapup_do_install(ZapupApp* app) {
         const ZCMakeZapBuildOptions opts = {
             .zap_root = z_pathbuf_as_view(&out_path),
             .ver = v,
+            .parallel = app->args.cmd_args.install.parallel,
+            .max_jobs = app->args.cmd_args.install.max_jobs,
         };
         z_cmake_build_zap(&opts);
 

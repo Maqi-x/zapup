@@ -1,5 +1,6 @@
 #include <zapup/build.h>
 
+#include <util/strconv.h>
 #include <util/cmd.h>
 #include <util/fs.h>
 
@@ -16,6 +17,15 @@ ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZStringBuf build_type_arg;
     z_strbuf_init_from(&build_type_arg, Z_SV("-DCMAKE_BUILD_TYPE="));
     z_strbuf_append(&build_type_arg, opts->ver.build == Z_BUILD_DEBUG ? Z_SV("Debug") : Z_SV("Release"));
+
+    ZStringBuf parallel_flag;
+    z_strbuf_init(&parallel_flag);
+    if (opts->parallel) {
+        z_strbuf_append(&parallel_flag, Z_SV("-j"));
+        if (opts->max_jobs != 0) {
+            z_format_int(opts->max_jobs, &parallel_flag);
+        }
+    }
 
     ZStringBuf capture;
     z_strbuf_init(&capture);
@@ -38,12 +48,16 @@ ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZCommand compile_cmd = {0};
     compile_cmd.argv = Z_STRING_VIEWS(
         Z_SV("cmake"), Z_SV("--build"), build_dir,
+        z_strbuf_view(&parallel_flag),
     );
     compile_cmd.cwd = build_dir;
     result = z_cmd_run(&compile_cmd);
     if (result.status != Z_CMD_OK) {
         return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_COMPILATION_ERR };
     }
-    
+
+    z_strbuf_destroy(&build_type_arg);
+    z_strbuf_destroy(&parallel_flag);
+
     return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_SUCCESS };
 }

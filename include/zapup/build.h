@@ -17,6 +17,8 @@ typedef struct ZCMakeZapBuildResult {
 typedef struct ZCMakeZapBuildOptions {
     ZPathView zap_root;
     ZResolvableZapVersion ver;
+    bool parallel;
+    int max_jobs;
 } ZCMakeZapBuildOptions;
 
 ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts);
