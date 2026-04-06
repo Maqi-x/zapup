@@ -26,6 +26,7 @@ ZCMakeZapBuildResult z_cmake_build_zap(ZPathView zap_root, ZResolvableZapVersion
         Z_SV("cmake"), zap_root,
         z_strbuf_view(&build_type_arg),
         Z_SV("-DZAP_BUILD_REFERENCE=OFF"),
+        Z_SV("-DCMAKE_CXX_FLAGS=-w"),
     );
     configure_cmd.cwd = build_dir;
     configure_cmd.capture_stdout = &capture;
