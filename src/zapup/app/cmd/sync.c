@@ -6,7 +6,7 @@
 
 int zapup_sync_single_entry(ZapupApp* app, const ZCliSyncArgs* args, ZVersionIndexEntry* entry) {
     ZResolvableZapVersion ver = {
-        .branch = z_strbuf_view(&entry->branch),
+        .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
         .revspec = z_strbuf_view(&entry->revspec),
         .build = entry->build,
     };
