@@ -2,7 +2,11 @@
 
 #include <util/arr-len.h>
 
-static ZHelpCommand help[] = {
+static ZHelpFlag help_global_flags[] = {
+    // TODO
+};
+
+static ZHelpCommand help_commands[] = {
     // TODO
 };
 
@@ -11,8 +15,11 @@ ZHelpInfo zapup_get_help() {
         .name = Z_SV("zapup"),
         .desc = Z_SV("TODO"),
 
-        .cmds = help,
-        .count = Z_ARRAY_LEN(help),
+        .global_flags = help_global_flags,
+        .global_flags_count = Z_ARRAY_LEN(help_global_flags),
+
+        .cmds = help_commands,
+        .command_count = Z_ARRAY_LEN(help_commands),
 
         .footer = Z_SV("TODO"),
     };

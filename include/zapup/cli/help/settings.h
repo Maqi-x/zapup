@@ -12,15 +12,18 @@ typedef struct ZHelpCommand {
     ZStringView name;
     ZStringView desc;
 
-    const ZHelpFlag* items;
+    const ZHelpFlag* flags;
 } ZHelpCommand;
 
 typedef struct ZHelpInfo {
     ZStringView name;
     ZStringView desc;
 
+    ZHelpFlag* global_flags;
+    usize global_flags_count;
+
     const ZHelpCommand* cmds;
-    usize count;
+    usize command_count;
 
     ZStringView footer;
 } ZHelpInfo;
