@@ -7,6 +7,8 @@
 #include <zapup/build.h>
 #include <zapup/output.h>
 
+#include <util/fs.h>
+
 #include <git2.h>
 
 void zapup_init(ZapupApp* app) {
@@ -15,9 +17,20 @@ void zapup_init(ZapupApp* app) {
     z_paths_ensure_exists(&app->paths);
     z_version_index_init(&app->index);
     z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
+    z_lockfile_init(&app->indexlock);
 }
 
 int zapup_do_install(ZapupApp* app) {
+    ZPathView lockpath = z_pathbuf_as_view(&app->paths.indexlock);
+    if (!z_lockfile_lock(&app->indexlock, lockpath)) {
+        ZPathBuf content;
+        z_pathbuf_init(&content);
+        z_read_file(lockpath, &content);
+        z_show_error("cannot acquire lock. lock file exists (pid: %.*s)", (int) content.len, content.data);
+        z_pathbuf_destroy(&content);
+        return 2;
+    }
+
     ZResolvableZapVersion v = app->args.cmd_args.install.version;
     git_repository* repo;
     
@@ -38,6 +51,7 @@ int zapup_do_install(ZapupApp* app) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
         z_pathbuf_destroy(&out_path);
+        z_lockfile_unlock(&app->indexlock);
         return 1;
     } else {
         z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
@@ -49,6 +63,7 @@ int zapup_do_install(ZapupApp* app) {
         };
         z_cmake_build_zap(&opts);
 
+        z_lockfile_unlock(&app->indexlock);
         z_pathbuf_destroy(&out_path);
         git_repository_free(repo);
     }
