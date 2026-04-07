@@ -1,4 +1,4 @@
-#include <zapup/app.h>
+#include <zapup/app/app.h>
 
 int main(int argc, const char* const* argv) {
     ZapupApp app; 
