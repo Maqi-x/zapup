@@ -22,6 +22,9 @@ typedef struct ZHelpInfo {
     ZHelpFlag* global_flags;
     usize global_flags_count;
 
+    ZHelpFlag* build_flags;
+    usize build_flags_count;
+
     const ZHelpCommand* cmds;
     usize command_count;
 
