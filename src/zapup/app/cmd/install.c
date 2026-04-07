@@ -31,7 +31,7 @@ int zapup_exec_install(ZapupApp* app) {
         return 1;
     } else {
         z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
-        const ZCMakeZapBuildOptions opts = {
+        const ZapBuildOptions opts = {
             .zap_root = z_pathbuf_as_view(&out_path),
             .ver = v,
             .parallel = args->build.parallel,

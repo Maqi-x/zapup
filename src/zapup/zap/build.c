@@ -4,8 +4,8 @@
 #include <util/cmd.h>
 #include <util/fs.h>
 
-ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
-    ZCMakeZapBuildResult final_res = { .code = Z_ZAP_BUILD_SUCCESS };
+ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
+    ZapBuildResult final_res = { .code = Z_ZAP_BUILD_SUCCESS };
 
     ZPathBuf build_dir_buf;
     z_pathbuf_init_from(&build_dir_buf, opts->zap_root);
@@ -14,7 +14,7 @@ ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZPathView build_dir = z_pathbuf_as_view(&build_dir_buf);
     if (!z_mkdir_all(build_dir)) {
         z_pathbuf_destroy(&build_dir_buf);
-        return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_FS_ERROR };
+        return (ZapBuildResult) { .code = Z_ZAP_BUILD_FS_ERROR };
     }
 
     ZStringBuf build_type_arg;
