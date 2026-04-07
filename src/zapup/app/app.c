@@ -1,4 +1,5 @@
 #include <zapup/app/app.h>
+#include <zapup/app/cmds.h>
 #include <zapup/app/helpers.h>
 
 #include <zapup/cli/args.h>
@@ -23,90 +24,6 @@ void zapup_init(ZapupApp* app) {
     z_config_load(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile));
 }
 
-int zapup_do_install(ZapupApp* app) {
-    int res = zapup_ensure_index_lock(app);
-    if (res != 0) return res;
-
-    ZResolvableZapVersion v = app->args.cmd_args.install.version;
-    git_repository* repo;
-    
-    ZPathBuf out_path;
-    zapup_get_version_dir_init(app, v, &out_path);
-    if (res != 0) return res;
-
-    z_show_info("installing to " Z_SV_FMT "...", Z_SV_FARG(out_path));
-
-    res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
-    if (res != 0) {
-        const git_error* err = git_error_last();
-        z_show_error("%s", err->message);
-        z_pathbuf_destroy(&out_path);
-        z_lockfile_unlock(&app->indexlock);
-        return 1;
-    } else {
-        z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
-        const ZCMakeZapBuildOptions opts = {
-            .zap_root = z_pathbuf_as_view(&out_path),
-            .ver = v,
-            .parallel = app->args.cmd_args.install.parallel,
-            .max_jobs = app->args.cmd_args.install.max_jobs,
-            .cc = app->cfg.build.cc,
-            .cxx = app->cfg.build.cxx,
-        };
-        z_cmake_build_zap(&opts);
-
-        z_lockfile_unlock(&app->indexlock);
-        z_pathbuf_destroy(&out_path);
-        git_repository_free(repo);
-    }
-    return 0;
-}
-
-int zapup_do_uninstall(ZapupApp* app) {
-    ZPathView lockpath = z_pathbuf_as_view(&app->paths.indexlock);
-    if (!z_lockfile_lock(&app->indexlock, lockpath)) {
-        ZPathBuf content;
-        z_pathbuf_init(&content);
-        z_read_file(lockpath, &content);
-        z_show_error("cannot acquire lock. lock file exists (pid: " Z_SV_FMT ")", Z_SV_FARG(content));
-        z_pathbuf_destroy(&content);
-        return 2;
-    }
-
-    ZResolvableZapVersion v = app->args.cmd_args.uninstall.version;
-    ZVersionIndexEntry* entry = z_version_index_find_by_version(&app->index, v);
-
-    ZStringBuf version_formatted;
-    z_strbuf_init(&version_formatted);
-    z_format_zap_version(v, &version_formatted);
-
-    if (!entry) {
-        z_show_error("version " Z_SV_FMT " is not installed", Z_SV_FARG(version_formatted));
-        z_strbuf_destroy(&version_formatted);
-        z_lockfile_unlock(&app->indexlock);
-        return 1;
-    }
-
-    ZPathView path = z_strbuf_view(&entry->path);
-    z_show_info("uninstalling " Z_SV_FMT " from " Z_SV_FMT "...",
-                    Z_SV_FARG(version_formatted), Z_SV_FARG(path));
-
-    if (z_file_exists(path)) {
-        if (!z_rm_recursive(path)) {
-            z_show_error("failed to remove directory " Z_SV_FMT, Z_SV_FARG(path));
-            z_lockfile_unlock(&app->indexlock);
-            return 1;
-        }
-    }
-
-    z_version_index_remove_by_version(&app->index, v);
-    
-    z_strbuf_destroy(&version_formatted);
-    z_lockfile_unlock(&app->indexlock);
-    z_show_info("uninstalled successfully");
-    return 0;
-} 
-
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     ZCliParseResult err = z_cli_parse_args(argc, argv, &app->args);
     if (err.code != Z_CLI_PARSE_OK) {
@@ -116,15 +33,13 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 
     switch (app->args.cmd) {
     case Z_CLI_CMD_INSTALL:
-        return zapup_do_install(app);
+        return zapup_exec_install(app);
     case Z_CLI_CMD_UNINSTALL:
-        return zapup_do_uninstall(app);
+        return zapup_exec_uninstall(app);
     case Z_CLI_CMD_SYNC:
-        z_show_warn("sync: not implemented yet");
-        break;
+        return zapup_exec_sync(app);
     case Z_CLI_CMD_HELP:
-        z_show_warn("help: not implemented yet");
-        break;
+        return zapup_exec_help(app);
     case Z_CLI_CMD_UNKNOWN:
         z_show_warn("unknown command");
         break;
