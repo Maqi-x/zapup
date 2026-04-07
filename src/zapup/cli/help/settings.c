@@ -21,9 +21,9 @@ ZHelpInfo zapup_get_help() {
     return (ZHelpInfo) {
         .name = Z_SV("zapup"),
         .desc = Z_SV(
-            "Version manager for The Zap Programming Language:\n"
-            "github: https://github.com/thezaplang/zap\n"
-            "website: https://zaplang.xyz"
+            " Version manager for The Zap Programming Language:\n"
+            " github: https://github.com/thezaplang/zap\n"
+            " website: https://zaplang.xyz"
         ),
 
         .global_flags = help_global_flags,
