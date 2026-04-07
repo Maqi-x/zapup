@@ -12,7 +12,7 @@ endif
 $(LIBGIT2_LIB):
 	$(call MKDIR,$(LIBGIT2_BUILD_DIR))
 	cd $(LIBGIT2_BUILD_DIR) && cmake ../../../$(LIBGIT2_DIR) \
-		-DCMAKE_BUILD_TYPE=$(if $(filter debug,$(BUILD)),Debug,Release) \
+		-DCMAKE_BUILD_TYPE=$(if $(filter debug asan,$(BUILD)),Debug,Release) \
 		-DBUILD_SHARED_LIBS=OFF \
 		-DBUILD_TESTS=OFF \
 		-DUSE_SSH=ON \

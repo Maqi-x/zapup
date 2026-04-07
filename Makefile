@@ -54,7 +54,10 @@ WARNINGS   := -Wall -Wextra
 COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
 
 ifeq ($(BUILD),debug)
-	CFLAGS := $(COMMON_CFLAGS) -O0 -g -DEL_DEBUG -fsanitize=address,undefined
+	CFLAGS := $(COMMON_CFLAGS) -Og -g
+	LDFLAGS :=
+else ifeq ($(BUILD),asan)
+	CFLAGS := $(COMMON_CFLAGS) -Og -g -fsanitize=address,undefined
 	LDFLAGS := -fsanitize=address,undefined
 else ifeq ($(BUILD),release)
 	CFLAGS := $(COMMON_CFLAGS) -O3 -DNDEBUG -DZAPUP_RELEASE
