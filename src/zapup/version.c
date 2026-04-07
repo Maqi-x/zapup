@@ -34,7 +34,9 @@ ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
     if (v.commit.len == 0) {
         return Z_ZAP_VERSION_NULL;
     }
-
+    if (z_sv_eql(v.commit, Z_SV("latest"))) {
+        v.commit = Z_SV("HEAD");
+    }
     return v;
 }
 
