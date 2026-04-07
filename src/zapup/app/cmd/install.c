@@ -14,7 +14,6 @@ int zapup_exec_install(ZapupApp* app) {
     const ZCliInstallArgs* args = &app->args.cmd_args.install;
 
     ZResolvableZapVersion v = args->version;
-    git_repository* repo;
 
     ZPathBuf out_path;
     zapup_get_version_dir_init(app, v, &out_path);
@@ -22,7 +21,7 @@ int zapup_exec_install(ZapupApp* app) {
 
     z_show_info("installing to " Z_SV_FMT "...", Z_SV_FARG(out_path));
 
-    res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
+    res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), NULL);
     if (res != 0) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
@@ -38,7 +37,6 @@ int zapup_exec_install(ZapupApp* app) {
 
         z_lockfile_unlock(&app->indexlock);
         z_pathbuf_destroy(&out_path);
-        git_repository_free(repo);
     }
     return 0;
 }
