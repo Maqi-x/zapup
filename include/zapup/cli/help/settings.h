@@ -16,8 +16,13 @@ typedef struct ZHelpCommand {
 } ZHelpCommand;
 
 typedef struct ZHelpInfo {
+    ZStringView name;
+    ZStringView desc;
+
     const ZHelpCommand* cmds;
     usize count;
+
+    ZStringView footer;
 } ZHelpInfo;
 
 extern ZHelpInfo zapup_get_help();
