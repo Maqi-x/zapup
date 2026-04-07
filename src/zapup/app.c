@@ -28,7 +28,7 @@ int zapup_do_install(ZapupApp* app) {
         ZPathBuf content;
         z_pathbuf_init(&content);
         z_read_file(lockpath, &content);
-        z_show_error("cannot acquire lock. lock file exists (pid: %.*s)", (int) content.len, content.data);
+        z_show_error("cannot acquire lock. lock file exists (pid: " Z_SV_FMT ")", Z_SV_FARG(content));
         z_pathbuf_destroy(&content);
         return 2;
     }
@@ -46,7 +46,7 @@ int zapup_do_install(ZapupApp* app) {
     z_pathbuf_sanitize(&out_path);
 
     z_strbuf_destroy(&version_formatted);
-    z_show_info("installing to %.*s...", (int) out_path.len, out_path.data);
+    z_show_info("installing to " Z_SV_FMT "...", Z_SV_FARG(out_path));
 
     int res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
     if (res != 0) {
@@ -74,6 +74,51 @@ int zapup_do_install(ZapupApp* app) {
     return 0;
 }
 
+int zapup_do_uninstall(ZapupApp* app) {
+    ZPathView lockpath = z_pathbuf_as_view(&app->paths.indexlock);
+    if (!z_lockfile_lock(&app->indexlock, lockpath)) {
+        ZPathBuf content;
+        z_pathbuf_init(&content);
+        z_read_file(lockpath, &content);
+        z_show_error("cannot acquire lock. lock file exists (pid: " Z_SV_FMT ")", Z_SV_FARG(content));
+        z_pathbuf_destroy(&content);
+        return 2;
+    }
+
+    ZResolvableZapVersion v = app->args.cmd_args.uninstall.version;
+    ZVersionIndexEntry* entry = z_version_index_find_by_version(&app->index, v);
+
+    ZStringBuf version_formatted;
+    z_strbuf_init(&version_formatted);
+    z_format_zap_version(v, &version_formatted);
+
+    if (!entry) {
+        z_show_error("version " Z_SV_FMT " is not installed", Z_SV_FARG(version_formatted));
+        z_strbuf_destroy(&version_formatted);
+        z_lockfile_unlock(&app->indexlock);
+        return 1;
+    }
+
+    ZPathView path = z_strbuf_view(&entry->path);
+    z_show_info("uninstalling " Z_SV_FMT " from " Z_SV_FMT "...",
+                    Z_SV_FARG(version_formatted), Z_SV_FARG(path));
+
+    if (z_file_exists(path)) {
+        if (!z_rm_recursive(path)) {
+            z_show_error("failed to remove directory " Z_SV_FMT, Z_SV_FARG(path));
+            z_lockfile_unlock(&app->indexlock);
+            return 1;
+        }
+    }
+
+    z_version_index_remove_by_version(&app->index, v);
+    
+    z_strbuf_destroy(&version_formatted);
+    z_lockfile_unlock(&app->indexlock);
+    z_show_info("uninstalled successfully");
+    return 0;
+} 
+
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     ZCliParseResult err = z_cli_parse_args(argc, argv, &app->args);
     if (err.code != Z_CLI_PARSE_OK) {
@@ -85,8 +130,7 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     case Z_CLI_CMD_INSTALL:
         return zapup_do_install(app);
     case Z_CLI_CMD_UNINSTALL:
-        z_show_warn("uninstall: not implemented yet");
-        break;
+        return zapup_do_uninstall(app);
     case Z_CLI_CMD_SYNC:
         z_show_warn("sync: not implemented yet");
         break;
