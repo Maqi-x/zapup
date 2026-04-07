@@ -11,7 +11,9 @@ int zapup_exec_install(ZapupApp* app) {
     int res = zapup_ensure_index_lock(app);
     if (res != 0) return res;
 
-    ZResolvableZapVersion v = app->args.cmd_args.install.version;
+    const ZCliInstallArgs* args = &app->args.cmd_args.install;
+
+    ZResolvableZapVersion v = args->version;
     git_repository* repo;
 
     ZPathBuf out_path;
@@ -32,8 +34,8 @@ int zapup_exec_install(ZapupApp* app) {
         const ZCMakeZapBuildOptions opts = {
             .zap_root = z_pathbuf_as_view(&out_path),
             .ver = v,
-            .parallel = app->args.cmd_args.install.parallel,
-            .max_jobs = app->args.cmd_args.install.max_jobs,
+            .parallel = args->build.parallel,
+            .max_jobs = args->build.max_jobs,
             .cc = app->cfg.build.cc,
             .cxx = app->cfg.build.cxx,
         };
