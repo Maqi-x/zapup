@@ -122,24 +122,33 @@ ZCliParseResult z_cli_handle_global_arg(ZStringView arg, ZCliArgs* out) {
     return z_find_cmd_from_arg(arg, &out->cmd);
 }
 
-ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
+static ZCliBuildArgs* z_cli_get_build_args(ZCliArgs* out) {
     switch (out->cmd) {
-    case Z_CLI_CMD_INSTALL:
+    case Z_CLI_CMD_INSTALL: return &out->cmd_args.install.build;
+    case Z_CLI_CMD_SYNC:    return &out->cmd_args.sync.build;
+    default:                return NULL;
+    }
+}
+
+ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
+    ZCliBuildArgs* build = z_cli_get_build_args(out);
+    if (build) {
         if (z_sv_eql(flag, Z_SV("parallel"))) {
-            out->cmd_args.install.parallel = true;
-            out->cmd_args.install.max_jobs = 0;
+            build->parallel = true;
+            build->max_jobs = 0;
             return Z_CLI_PARSE_RESULT_OK;
         }
         if (z_sv_starts_with(flag, Z_SV("parallel="))) {
-            out->cmd_args.install.parallel = true;
+            build->parallel = true;
             ZStringView val = z_sv_trim_prefix(flag, Z_SV("parallel="));
-            return z_cli_parse_jobs(val, &out->cmd_args.install.max_jobs);
+            return z_cli_parse_jobs(val, &build->max_jobs);
         }
-        return z_cli_unknown_long_flag(flag);
+    }
+
+    switch (out->cmd) {
+    case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
-        return z_cli_unknown_long_flag(flag);
     case Z_CLI_CMD_SYNC:
-        return z_cli_unknown_long_flag(flag);
     case Z_CLI_CMD_HELP:
         return z_cli_unknown_long_flag(flag);
     case Z_CLI_CMD_UNKNOWN:
@@ -150,22 +159,21 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
 
 ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArgs* out) {
     char flag = flags.data[*i];
+    ZCliBuildArgs* build = z_cli_get_build_args(out);
+    if (build && flag == 'j') {
+        build->parallel = true;
+        ZStringView val = z_sv_slice(flags, *i + 1, flags.len);
+        ZCliParseResult res = z_cli_parse_jobs(val, &build->max_jobs);
+        if (res.code == Z_CLI_PARSE_OK) {
+            *i = flags.len;
+        }
+        return res;
+    }
+
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
-        if (flag == 'j') {
-            out->cmd_args.install.parallel = true;
-            ZStringView val = z_sv_slice(flags, *i + 1, flags.len);
-            ZCliParseResult res = z_cli_parse_jobs(val, &out->cmd_args.install.max_jobs);
-            if (res.code == Z_CLI_PARSE_OK) {
-                *i = flags.len;
-            }
-            return res;
-        }
-        return z_cli_unknown_short_flag(flag);
     case Z_CLI_CMD_UNINSTALL:
-        return z_cli_unknown_short_flag(flag);
     case Z_CLI_CMD_SYNC:
-        return z_cli_unknown_short_flag(flag);
     case Z_CLI_CMD_HELP:
         return z_cli_unknown_short_flag(flag);
     case Z_CLI_CMD_UNKNOWN:
@@ -181,7 +189,7 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.uninstall.version);
     case Z_CLI_CMD_SYNC:
-        return z_cli_unexpected_arg(arg);
+        return z_cli_try_parse_version_into(arg, &out->cmd_args.sync.version);
     case Z_CLI_CMD_HELP:
         if (out->cmd_args.help.target != Z_CLI_CMD_UNKNOWN) {
             return z_cli_unexpected_arg(arg);
@@ -237,13 +245,16 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     switch (cmd) {
     case Z_CLI_CMD_INSTALL:
         out->cmd_args.install.version = Z_ZAP_VERSION_NULL;
-        out->cmd_args.install.parallel = false;
-        out->cmd_args.install.max_jobs = 0;
+        out->cmd_args.install.build.parallel = false;
+        out->cmd_args.install.build.max_jobs = 0;
         break;
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
         break;
     case Z_CLI_CMD_SYNC:
+        out->cmd_args.sync.version = Z_ZAP_VERSION_NULL;
+        out->cmd_args.sync.build.parallel = false;
+        out->cmd_args.sync.build.max_jobs = 0;
         break;
     case Z_CLI_CMD_HELP:
        out->cmd_args.help.target = Z_CLI_CMD_UNKNOWN; 
