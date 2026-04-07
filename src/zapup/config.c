@@ -7,8 +7,8 @@
 
 void z_config_init(ZConfig* cfg) {
     cfg->toolchain.active_version = Z_ZAP_VERSION_NULL;
-    cfg->build.cc = Z_SV_NULL;
-    cfg->build.cxx = Z_SV_NULL;
+    cfg->build.cc = Z_SV("cc");
+    cfg->build.cxx = Z_SV("c++");
     cfg->_ctx = NULL;
 }
 
@@ -36,23 +36,23 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
         yyjson_val* v_active = yyjson_obj_get(v_toolchain, "active_version");
         if (yyjson_is_obj(v_active)) {
             yyjson_val* v_branch = yyjson_obj_get(v_active, "branch");
+            if (yyjson_is_str(v_branch)) {
+                cfg->toolchain.active_version.branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch));
+            }
+
             yyjson_val* v_commit = yyjson_obj_get(v_active, "commit");
+            if (yyjson_is_str(v_commit)) {
+                cfg->toolchain.active_version.commit = z_sv_from_data_and_len(yyjson_get_str(v_commit), yyjson_get_len(v_commit));
+            }
+
             yyjson_val* v_build = yyjson_obj_get(v_active, "build");
-
-            if (v_branch && v_commit) {
-                ZBuildType build = Z_BUILD_RELEASE;
-                if (v_build) {
-                    const char* bstr = yyjson_get_str(v_build);
-                    if (bstr && strcmp(bstr, "debug") == 0) {
-                        build = Z_BUILD_DEBUG;
-                    }
+            if (yyjson_is_str(v_build)) {
+                const char* bstr = yyjson_get_str(v_build);
+                if (bstr && strcmp(bstr, "debug") == 0) {
+                    cfg->toolchain.active_version.build = Z_BUILD_DEBUG;
+                } else if (bstr && strcmp(bstr, "release") == 0) {
+                    cfg->toolchain.active_version.build = Z_BUILD_RELEASE;
                 }
-
-                cfg->toolchain.active_version = (ZResolvableZapVersion) {
-                    .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
-                    .commit = z_sv_from_data_and_len(yyjson_get_str(v_commit), yyjson_get_len(v_commit)),
-                    .build = build,
-                };
             }
         }
     }
@@ -60,12 +60,12 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
     yyjson_val* v_build = yyjson_obj_get(root, "build");
     if (yyjson_is_obj(v_build)) {
         yyjson_val* v_cc = yyjson_obj_get(v_build, "cc");
-        yyjson_val* v_cxx = yyjson_obj_get(v_build, "cxx");
-
-        if (v_cc) {
+        if (yyjson_is_str(v_cc)) {
             cfg->build.cc = z_sv_from_data_and_len(yyjson_get_str(v_cc), yyjson_get_len(v_cc));
         }
-        if (v_cxx) {
+
+        yyjson_val* v_cxx = yyjson_obj_get(v_build, "cxx");
+        if (yyjson_is_str(v_cxx)) {
             cfg->build.cxx = z_sv_from_data_and_len(yyjson_get_str(v_cxx), yyjson_get_len(v_cxx));
         }
     }
