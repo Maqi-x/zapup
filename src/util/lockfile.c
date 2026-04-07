@@ -38,7 +38,10 @@ static bool is_lock_stale(ZPathView path) {
     z_strbuf_append_char(&sb, '\0');
     char* end;
     long pid = strtol(sb.data, &end, 10);
-    if (end == sb.data || *end != '\0') return false;
+    if (end == sb.data || *end != '\0') {
+        z_strbuf_destroy(&sb);
+        return false;
+    }
     z_strbuf_destroy(&sb);
     return !is_pid_alive(pid);
 }
@@ -47,7 +50,7 @@ bool z_lockfile_lock(ZLockFile* lock, ZPathView path) {
     if (lock->is_locked) return false;
 
     z_pathbuf_clear(&lock->path);
-    if (!z_pathbuf_init_from(&lock->path, path)) return false;
+    if (!z_pathbuf_append(&lock->path, path)) return false;
 
     char* cpath = z_sv_to_cstr_alloc(z_pathbuf_as_view(&lock->path));
     if (!cpath) return false;
