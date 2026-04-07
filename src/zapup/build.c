@@ -5,12 +5,15 @@
 #include <util/fs.h>
 
 ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
+    ZCMakeZapBuildResult final_res = { .code = Z_ZAP_BUILD_SUCCESS };
+    
     ZPathBuf build_dir_buf;
     z_pathbuf_init_from(&build_dir_buf, opts->zap_root);
     z_pathbuf_join(&build_dir_buf, Z_PV("build"));
 
     ZPathView build_dir = z_pathbuf_as_view(&build_dir_buf);
     if (!z_mkdir_all(build_dir)) {
+        z_pathbuf_destroy(&build_dir_buf);
         return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_FS_ERROR };
     }
 
@@ -29,35 +32,50 @@ ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
 
     ZStringBuf capture;
     z_strbuf_init(&capture);
-    ZCmdRunResult result;
 
-    ZCommand configure_cmd = {0};
-    configure_cmd.argv = Z_STRING_VIEWS(
-        Z_SV("cmake"), opts->zap_root,
-        z_strbuf_view(&build_type_arg),
-        Z_SV("-DZAP_BUILD_REFERENCE=OFF"),
-        Z_SV("-DCMAKE_CXX_FLAGS=-w"),
-    );
-    configure_cmd.cwd = build_dir;
-    configure_cmd.capture_stdout = &capture;
-    result = z_cmd_run(&configure_cmd);
-    if (result.status != Z_CMD_OK) {
-        return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_CONFIGURE_ERR };
+    ZStringView config_argv[8];
+    usize config_argc = 0;
+    config_argv[config_argc++] = Z_SV("cmake");
+    config_argv[config_argc++] = opts->zap_root;
+    config_argv[config_argc++] = z_strbuf_view(&build_type_arg);
+    config_argv[config_argc++] = Z_SV("-DZAP_BUILD_REFERENCE=OFF");
+    config_argv[config_argc++] = Z_SV("-DCMAKE_CXX_FLAGS=-w");
+
+    ZCommand configure_cmd = {
+        .cwd = build_dir,
+        .argv = { .data = config_argv, .count = config_argc },
+        .capture_stdout = &capture
+    };
+
+    if (z_cmd_run(&configure_cmd).status != Z_CMD_OK) {
+        final_res.code = Z_ZAP_BUILD_CONFIGURE_ERR;
+        goto cleanup;
     }
 
-    ZCommand compile_cmd = {0};
-    compile_cmd.argv = Z_STRING_VIEWS(
-        Z_SV("cmake"), Z_SV("--build"), build_dir,
-        z_strbuf_view(&parallel_flag),
-    );
-    compile_cmd.cwd = build_dir;
-    result = z_cmd_run(&compile_cmd);
-    if (result.status != Z_CMD_OK) {
-        return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_COMPILATION_ERR };
+    ZStringView build_argv[8];
+    usize build_argc = 0;
+    build_argv[build_argc++] = Z_SV("cmake");
+    build_argv[build_argc++] = Z_SV("--build");
+    build_argv[build_argc++] = build_dir;
+    if (opts->parallel) {
+        build_argv[build_argc++] = z_strbuf_view(&parallel_flag);
     }
 
+    ZCommand compile_cmd = {
+        .cwd = build_dir,
+        .argv = { .data = build_argv, .count = build_argc }
+    };
+
+    if (z_cmd_run(&compile_cmd).status != Z_CMD_OK) {
+        final_res.code = Z_ZAP_BUILD_COMPILATION_ERR;
+        goto cleanup;
+    }
+
+cleanup:
     z_strbuf_destroy(&build_type_arg);
     z_strbuf_destroy(&parallel_flag);
+    z_strbuf_destroy(&capture);
+    z_pathbuf_destroy(&build_dir_buf);
 
-    return (ZCMakeZapBuildResult) { .code = Z_ZAP_BUILD_SUCCESS };
+    return final_res;
 }
