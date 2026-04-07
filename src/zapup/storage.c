@@ -70,21 +70,32 @@ bool z_paths_find_index_file(ZPathBuf* out) {
     return z_pathbuf_join(out, Z_PV("index.json"));
 }
 
+bool z_paths_find_index_lock(ZPathBuf* out) {
+    if (!z_paths_find_versions_dir(out)) return false;
+    return z_pathbuf_join(out, Z_PV("index.lock"));
+}
+
 bool z_paths_config_load(ZPathsConfig* cfg) {
     if (!z_paths_find_config_dir(&cfg->config))     return false;
     if (!z_paths_find_data_dir(&cfg->data))         return false;
     if (!z_paths_find_cache_dir(&cfg->cache))       return false;
     if (!z_paths_find_versions_dir(&cfg->versions)) return false;
     if (!z_paths_find_index_file(&cfg->indexfile))  return false;
+    if (!z_paths_find_index_lock(&cfg->indexlock))  return false;
     return true;
 }
 
+static inline bool create_file(ZPathView path) {
+    return z_mkfile_if_not_exists(path);
+}
+
 bool z_paths_ensure_exists(ZPathsConfig* cfg) {
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->cache)))    return false;
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))     return false;
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config)))   return false;
-    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions))) return false;
-    if (!z_mkfile_if_not_exists(z_pathbuf_as_view(&cfg->indexfile)))   return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->cache)))     return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))      return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config)))    return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions)))  return false;
+    if (!create_file(z_pathbuf_as_view(&cfg->indexfile))) return false;
+    if (!create_file(z_pathbuf_as_view(&cfg->indexlock))) return false;
     return true;
 }
 
@@ -94,4 +105,5 @@ void z_paths_config_destroy(ZPathsConfig* cfg) {
     z_pathbuf_destroy(&cfg->config);
     z_pathbuf_destroy(&cfg->versions);
     z_pathbuf_destroy(&cfg->indexfile);
+    z_pathbuf_destroy(&cfg->indexlock);
 }

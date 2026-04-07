@@ -10,6 +10,7 @@ typedef struct ZPathsConfig {
     ZPathBuf versions;
 
     ZPathBuf indexfile;
+    ZPathBuf indexlock;
 } ZPathsConfig;
 
 bool z_paths_config_load(ZPathsConfig* cfg);
