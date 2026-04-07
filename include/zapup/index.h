@@ -24,6 +24,13 @@ void z_version_index_free(ZVersionIndex* idx);
 
 void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPathView path);
 
+ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZResolvableZapVersion version);
+ZVersionIndexEntry* z_version_index_find_by_path(ZVersionIndex* idx, ZPathView path);
+
+void z_version_index_remove_at(ZVersionIndex* idx, usize i);
+bool z_version_index_remove_by_version(ZVersionIndex* idx, ZResolvableZapVersion version);
+bool z_version_index_remove_by_path(ZVersionIndex* idx, ZPathView path);
+
 void z_version_index_from_json(ZVersionIndex* idx, ZStringView json);
 bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out);
 

@@ -38,6 +38,64 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
     z_strbuf_init_from(&entry->path, path);
 }
 
+ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+    for (usize i = 0; i < idx->len; i++) {
+        ZVersionIndexEntry* entry = &idx->entries[i];
+        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
+            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
+            entry->build == version.build) {
+            return entry;
+        }
+    }
+    return NULL;
+}
+
+ZVersionIndexEntry* z_version_index_find_by_path(ZVersionIndex* idx, ZPathView path) {
+    for (usize i = 0; i < idx->len; i++) {
+        ZVersionIndexEntry* entry = &idx->entries[i];
+        if (z_sv_eql(z_strbuf_view(&entry->path), path)) {
+            return entry;
+        }
+    }
+    return NULL;
+}
+
+void z_version_index_remove_at(ZVersionIndex* idx, usize i) {
+    if (i >= idx->len) return;
+    ZVersionIndexEntry* entry = &idx->entries[i];
+    z_strbuf_destroy(&entry->branch);
+    z_strbuf_destroy(&entry->revspec);
+    z_strbuf_destroy(&entry->path);
+    if (i < idx->len - 1) {
+        memmove(&idx->entries[i], &idx->entries[i + 1], (idx->len - i - 1) * sizeof(ZVersionIndexEntry));
+    }
+    idx->len--;
+}
+
+bool z_version_index_remove_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+    for (usize i = 0; i < idx->len; i++) {
+        ZVersionIndexEntry* entry = &idx->entries[i];
+        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
+            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
+            entry->build == version.build) {
+            z_version_index_remove_at(idx, i);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool z_version_index_remove_by_path(ZVersionIndex* idx, ZPathView path) {
+    for (usize i = 0; i < idx->len; i++) {
+        ZVersionIndexEntry* entry = &idx->entries[i];
+        if (z_sv_eql(z_strbuf_view(&entry->path), path)) {
+            z_version_index_remove_at(idx, i);
+            return true;
+        }
+    }
+    return false;
+}
+
 void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
     z_version_index_free(idx);
 
