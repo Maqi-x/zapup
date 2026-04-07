@@ -1,4 +1,4 @@
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 
 ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
     if (s.len == 0) {

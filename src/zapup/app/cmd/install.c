@@ -1,8 +1,8 @@
 #include <zapup/app/app.h>
 #include <zapup/app/helpers.h>
 
-#include <zapup/clone.h>
-#include <zapup/build.h>
+#include <zapup/zap/clone.h>
+#include <zapup/zap/build.h>
 #include <zapup/output.h>
 
 #include <util/fs.h>
@@ -13,7 +13,7 @@ int zapup_exec_install(ZapupApp* app) {
 
     ZResolvableZapVersion v = app->args.cmd_args.install.version;
     git_repository* repo;
-    
+
     ZPathBuf out_path;
     zapup_get_version_dir_init(app, v, &out_path);
     if (res != 0) return res;
@@ -45,4 +45,3 @@ int zapup_exec_install(ZapupApp* app) {
     }
     return 0;
 }
-

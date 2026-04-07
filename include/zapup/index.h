@@ -3,7 +3,7 @@
 #include <util/pathview.h>
 #include <util/strbuf.h>
 
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 #include <defs/int-types.h>
 
 typedef struct ZVersionIndexEntry {
@@ -36,4 +36,3 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out);
 
 bool z_version_index_load(ZVersionIndex* idx, ZPathView path);
 bool z_version_index_save(ZVersionIndex* idx, ZPathView path);
-

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 #include <util/pathview.h>
 
 #include <git2.h>

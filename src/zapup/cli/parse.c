@@ -1,7 +1,7 @@
 #include <zapup/cli/parse.h>
 #include <zapup/cli/args.h>
 
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 
 #include <util/arr-len.h>
 #include <util/macros.h>
@@ -257,7 +257,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         out->cmd_args.sync.build.max_jobs = 0;
         break;
     case Z_CLI_CMD_HELP:
-       out->cmd_args.help.target = Z_CLI_CMD_UNKNOWN; 
+       out->cmd_args.help.target = Z_CLI_CMD_UNKNOWN;
        break;
     case Z_CLI_CMD_UNKNOWN:
         Z_UNREACHABLE("z_cli_apply_command_defaults() should not be called with Z_CLI_CMD_UNKNOWN parameter");

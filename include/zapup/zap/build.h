@@ -1,7 +1,7 @@
 #pragma once
 
 #include <util/pathview.h>
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 
 typedef enum ZCMakeZapBuildErrorCode {
     Z_ZAP_BUILD_SUCCESS,

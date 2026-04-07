@@ -1,6 +1,6 @@
 #pragma once
 
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 
 typedef enum ZCliCommand {
     Z_CLI_CMD_INSTALL,
@@ -26,7 +26,7 @@ typedef struct ZCliSyncArgs {
 } ZCliSyncArgs;
 
 typedef struct ZCliUninstallArgs {
-    ZResolvableZapVersion version;    
+    ZResolvableZapVersion version;
 } ZCliUninstallArgs;
 
 typedef struct ZCliHelpArgs {

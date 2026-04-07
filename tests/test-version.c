@@ -1,7 +1,7 @@
 #include <unity.h>
 #include "utility.h"
 
-#include <zapup/version.h>
+#include <zapup/zap/version.h>
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -106,7 +106,7 @@ void test_format_branch_commit_debug(void) {
 
 int main() {
     UNITY_BEGIN();
-    
+
     RUN_TEST(test_parse_commit_only);
     RUN_TEST(test_parse_branch_and_commit);
     RUN_TEST(test_parse_commit_release);

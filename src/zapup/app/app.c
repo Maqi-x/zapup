@@ -5,8 +5,8 @@
 #include <zapup/cli/args.h>
 #include <zapup/cli/parse.h>
 
-#include <zapup/clone.h>
-#include <zapup/build.h>
+#include <zapup/zap/clone.h>
+#include <zapup/zap/build.h>
 #include <zapup/output.h>
 
 #include <util/fs.h>

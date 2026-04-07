@@ -1,4 +1,4 @@
-#include <zapup/build.h>
+#include <zapup/zap/build.h>
 
 #include <util/strconv.h>
 #include <util/cmd.h>
@@ -6,7 +6,7 @@
 
 ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZCMakeZapBuildResult final_res = { .code = Z_ZAP_BUILD_SUCCESS };
-    
+
     ZPathBuf build_dir_buf;
     z_pathbuf_init_from(&build_dir_buf, opts->zap_root);
     z_pathbuf_join(&build_dir_buf, Z_PV("build"));
