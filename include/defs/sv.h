@@ -15,6 +15,9 @@ typedef struct ZStringView {
 #define Z_SV_NULL ((ZStringView) { .data = NULL, .len = 0 })
 #define Z_SV(STRING_LITERAL) ((ZStringView) { .data = STRING_LITERAL, .len = sizeof(STRING_LITERAL) - 1 })
 
+#define Z_SV_FMT "%.*s"
+#define Z_SV_FARG(SV) ((int)((SV).len)), ((SV).data ? (SV).data : "(nil)")
+
 static inline ulong z_sv_print(ZStringView sv, FILE* out) {
     return fwrite(sv.data, 1, sv.len, out);
 }
