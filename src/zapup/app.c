@@ -22,7 +22,7 @@ void zapup_init(ZapupApp* app) {
     z_config_load(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile));
 }
 
-int zapup_do_install(ZapupApp* app) {
+int zapup_ensure_index_lock(ZapupApp* app) {
     ZPathView lockpath = z_pathbuf_as_view(&app->paths.indexlock);
     if (!z_lockfile_lock(&app->indexlock, lockpath)) {
         ZPathBuf content;
@@ -32,23 +32,36 @@ int zapup_do_install(ZapupApp* app) {
         z_pathbuf_destroy(&content);
         return 2;
     }
+    return 0;
+}
+
+int zapup_get_version_dir_init(ZapupApp* app, ZResolvableZapVersion ver, ZPathBuf* out_path) {
+    ZStringBuf version_formatted;
+    z_strbuf_init(&version_formatted);
+    z_format_zap_version(ver, &version_formatted);
+
+    z_pathbuf_init_from(out_path, z_pathbuf_as_view(&app->paths.versions));
+    z_pathbuf_join(out_path, z_strbuf_view(&version_formatted));
+    z_pathbuf_sanitize(out_path);
+
+    z_strbuf_destroy(&version_formatted);
+    return 0;
+}
+
+int zapup_do_install(ZapupApp* app) {
+    int res = zapup_ensure_index_lock(app);
+    if (res != 0) return res;
 
     ZResolvableZapVersion v = app->args.cmd_args.install.version;
     git_repository* repo;
     
-    ZStringBuf version_formatted;
-    z_strbuf_init(&version_formatted);
-    z_format_zap_version(v, &version_formatted);
-
     ZPathBuf out_path;
-    z_pathbuf_init_from(&out_path, z_pathbuf_as_view(&app->paths.versions));
-    z_pathbuf_join(&out_path, z_strbuf_view(&version_formatted));
-    z_pathbuf_sanitize(&out_path);
+    zapup_get_version_dir_init(app, v, &out_path);
+    if (res != 0) return res;
 
-    z_strbuf_destroy(&version_formatted);
     z_show_info("installing to " Z_SV_FMT "...", Z_SV_FARG(out_path));
 
-    int res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
+    res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), &repo);
     if (res != 0) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
