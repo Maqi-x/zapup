@@ -33,13 +33,34 @@ ZCMakeZapBuildResult z_cmake_build_zap(const ZCMakeZapBuildOptions* opts) {
     ZStringBuf capture;
     z_strbuf_init(&capture);
 
-    ZStringView config_argv[8];
+    ZStringBuf cc_arg;
+    z_strbuf_init(&cc_arg);
+    if (opts->cc.len > 0) {
+        z_strbuf_append(&cc_arg, Z_SV("-DCMAKE_C_COMPILER="));
+        z_strbuf_append(&cc_arg, opts->cc);
+    }
+
+    ZStringBuf cxx_arg;
+    z_strbuf_init(&cxx_arg);
+    if (opts->cxx.len > 0) {
+        z_strbuf_append(&cxx_arg, Z_SV("-DCMAKE_CXX_COMPILER="));
+        z_strbuf_append(&cxx_arg, opts->cxx);
+    }
+
+    ZStringView config_argv[12];
     usize config_argc = 0;
     config_argv[config_argc++] = Z_SV("cmake");
     config_argv[config_argc++] = opts->zap_root;
     config_argv[config_argc++] = z_strbuf_view(&build_type_arg);
     config_argv[config_argc++] = Z_SV("-DZAP_BUILD_REFERENCE=OFF");
     config_argv[config_argc++] = Z_SV("-DCMAKE_CXX_FLAGS=-w");
+
+    if (cc_arg.len > 0) {
+        config_argv[config_argc++] = z_strbuf_view(&cc_arg);
+    }
+    if (cxx_arg.len > 0) {
+        config_argv[config_argc++] = z_strbuf_view(&cxx_arg);
+    }
 
     ZCommand configure_cmd = {
         .cwd = build_dir,
@@ -75,6 +96,8 @@ cleanup:
     z_strbuf_destroy(&build_type_arg);
     z_strbuf_destroy(&parallel_flag);
     z_strbuf_destroy(&capture);
+    z_strbuf_destroy(&cc_arg);
+    z_strbuf_destroy(&cxx_arg);
     z_pathbuf_destroy(&build_dir_buf);
 
     return final_res;

@@ -62,6 +62,8 @@ int zapup_do_install(ZapupApp* app) {
             .ver = v,
             .parallel = app->args.cmd_args.install.parallel,
             .max_jobs = app->args.cmd_args.install.max_jobs,
+            .cc = app->cfg.build.cc,
+            .cxx = app->cfg.build.cxx,
         };
         z_cmake_build_zap(&opts);
 
