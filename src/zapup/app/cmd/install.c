@@ -31,14 +31,9 @@ int zapup_exec_install(ZapupApp* app) {
         return 1;
     } else {
         z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
-        const ZapBuildOptions opts = {
-            .zap_root = z_pathbuf_as_view(&out_path),
-            .ver = v,
-            .parallel = args->build.parallel,
-            .max_jobs = args->build.max_jobs,
-            .cc = app->cfg.build.cc,
-            .cxx = app->cfg.build.cxx,
-        };
+        const ZapBuildOptions opts = zapup_cli_build_args_to_opts(
+            app, &args->build, z_strbuf_view(&out_path), v
+        );
         z_cmake_build_zap(&opts);
 
         z_lockfile_unlock(&app->indexlock);
