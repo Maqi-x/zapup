@@ -9,6 +9,7 @@ typedef struct ZPathsConfig {
     ZPathBuf config;
     ZPathBuf versions;
 
+    ZPathBuf cfgfile;
     ZPathBuf indexfile;
     ZPathBuf indexlock;
 } ZPathsConfig;
