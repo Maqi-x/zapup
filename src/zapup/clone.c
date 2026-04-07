@@ -9,7 +9,7 @@ int z_clone_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git
     int error = 0;
     char* path_cstr = z_sv_to_cstr_alloc(path);
     char* branch_cstr = NULL;
-    char* commit_cstr = NULL;
+    char* revspec_cstr = NULL;
     git_object* commit_obj = NULL;
 
     if (!path_cstr) return -1;
@@ -29,15 +29,15 @@ int z_clone_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git
     error = git_clone(out_repo, Z_ZAP_REPO_URL, path_cstr, &clone_opts);
     if (error != 0) goto cleanup;
 
-    if (z_sv_is_null(ver.commit)) goto cleanup;
+    if (z_sv_is_null(ver.revspec)) goto cleanup;
 
-    commit_cstr = z_sv_to_cstr_alloc(ver.commit);
-    if (!commit_cstr) {
+    revspec_cstr = z_sv_to_cstr_alloc(ver.revspec);
+    if (!revspec_cstr) {
         error = -1;
         goto cleanup;
     }
 
-    error = git_revparse_single(&commit_obj, *out_repo, commit_cstr);
+    error = git_revparse_single(&commit_obj, *out_repo, revspec_cstr);
     if (error != 0) goto cleanup;
 
     git_checkout_options checkout_opts;
@@ -51,7 +51,7 @@ int z_clone_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git
 
 cleanup:
     git_object_free(commit_obj);
-    free(commit_cstr);
+    free(revspec_cstr);
     free(branch_cstr);
     free(path_cstr);
 

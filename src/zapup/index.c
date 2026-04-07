@@ -18,7 +18,7 @@ void z_version_index_free(ZVersionIndex* idx) {
     }
     for (usize i = 0; i < idx->len; i++) {
         z_strbuf_destroy(&idx->entries[i].branch);
-        z_strbuf_destroy(&idx->entries[i].commit);
+        z_strbuf_destroy(&idx->entries[i].revspec);
         z_strbuf_destroy(&idx->entries[i].path);
     }
     free(idx->entries);
@@ -33,7 +33,7 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
     
     ZVersionIndexEntry* entry = &idx->entries[idx->len++];
     z_strbuf_init_from(&entry->branch, version.branch);
-    z_strbuf_init_from(&entry->commit, version.commit);
+    z_strbuf_init_from(&entry->revspec, version.revspec);
     entry->build = version.build;
     z_strbuf_init_from(&entry->path, path);
 }
@@ -55,11 +55,11 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
     yyjson_arr_iter_init(root, &iter);
     while ((val = yyjson_arr_iter_next(&iter))) {
         yyjson_val* v_branch = yyjson_obj_get(val, "branch");
-        yyjson_val* v_commit = yyjson_obj_get(val, "commit");
+        yyjson_val* v_revspec = yyjson_obj_get(val, "revspec");
         yyjson_val* v_build = yyjson_obj_get(val, "build");
         yyjson_val* v_path = yyjson_obj_get(val, "path");
 
-        if (v_branch && v_commit && v_path) {
+        if (v_branch && v_revspec && v_path) {
             ZBuildType build = Z_BUILD_RELEASE;
             if (v_build) {
                 const char* bstr = yyjson_get_str(v_build);
@@ -70,7 +70,7 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
 
             ZResolvableZapVersion ver = {
                 .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
-                .commit = z_sv_from_data_and_len(yyjson_get_str(v_commit), yyjson_get_len(v_commit)),
+                .revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec)),
                 .build = build,
             };
             ZPathView path = z_sv_from_data_and_len(yyjson_get_str(v_path), yyjson_get_len(v_path));
@@ -88,7 +88,7 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         yyjson_mut_val* obj = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_strn(doc, obj, "branch", entry->branch.data, entry->branch.len);
-        yyjson_mut_obj_add_strn(doc, obj, "commit", entry->commit.data, entry->commit.len);
+        yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
         yyjson_mut_obj_add_str(doc, obj, "build", entry->build == Z_BUILD_DEBUG ? "debug" : "release");
         yyjson_mut_obj_add_strn(doc, obj, "path", entry->path.data, entry->path.len);
         yyjson_mut_arr_append(root, obj);

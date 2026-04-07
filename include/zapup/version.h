@@ -12,14 +12,14 @@ typedef enum ZBuildType {
 
 typedef struct ZResolvableZapVersion {
     ZStringView branch;
-    ZStringView commit;
+    ZStringView revspec;
     ZBuildType build;
 } ZResolvableZapVersion;
 
-#define Z_ZAP_VERSION_NULL ((ZResolvableZapVersion) { .branch = Z_SV_NULL, .commit = Z_SV_NULL })
+#define Z_ZAP_VERSION_NULL ((ZResolvableZapVersion) { .branch = Z_SV_NULL, .revspec = Z_SV_NULL })
 
 static inline bool z_zap_ver_is_null(ZResolvableZapVersion v) {
-    return z_sv_is_null(v.branch) && z_sv_is_null(v.commit);
+    return z_sv_is_null(v.branch) && z_sv_is_null(v.revspec);
 }
 
 ZResolvableZapVersion z_parse_zap_version(ZStringView s);

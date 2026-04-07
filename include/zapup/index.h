@@ -8,7 +8,7 @@
 
 typedef struct ZVersionIndexEntry {
     ZStringBuf branch;
-    ZStringBuf commit;
+    ZStringBuf revspec;
     ZBuildType build;
     ZStringBuf path;
 } ZVersionIndexEntry;

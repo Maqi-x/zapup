@@ -40,9 +40,9 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
                 cfg->toolchain.active_version.branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch));
             }
 
-            yyjson_val* v_commit = yyjson_obj_get(v_active, "commit");
-            if (yyjson_is_str(v_commit)) {
-                cfg->toolchain.active_version.commit = z_sv_from_data_and_len(yyjson_get_str(v_commit), yyjson_get_len(v_commit));
+            yyjson_val* v_revspec = yyjson_obj_get(v_active, "revspec");
+            if (yyjson_is_str(v_revspec)) {
+                cfg->toolchain.active_version.revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
             }
 
             yyjson_val* v_build = yyjson_obj_get(v_active, "build");
@@ -87,9 +87,9 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
         yyjson_mut_obj_add_strn(doc, active, "branch", 
             cfg->toolchain.active_version.branch.data, 
             cfg->toolchain.active_version.branch.len);
-        yyjson_mut_obj_add_strn(doc, active, "commit", 
-            cfg->toolchain.active_version.commit.data, 
-            cfg->toolchain.active_version.commit.len);
+        yyjson_mut_obj_add_strn(doc, active, "revspec", 
+            cfg->toolchain.active_version.revspec.data, 
+            cfg->toolchain.active_version.revspec.len);
         yyjson_mut_obj_add_str(doc, active, "build", 
             cfg->toolchain.active_version.build == Z_BUILD_DEBUG ? "debug" : "release");
     }
