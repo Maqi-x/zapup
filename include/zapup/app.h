@@ -4,10 +4,13 @@
 
 #include <zapup/cli/args.h>
 #include <zapup/storage.h>
+#include <zapup/config.h>
 #include <zapup/index.h>
 
 typedef struct ZapupApp {
+    ZConfig cfg;
     ZCliArgs args;
+
     ZPathsConfig paths;
     ZVersionIndex index;
     ZLockFile indexlock;
