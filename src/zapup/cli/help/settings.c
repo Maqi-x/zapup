@@ -1,4 +1,5 @@
 #include <zapup/cli/help/settings.h>
+#include <zapup/cli/ansi.h>
 
 #include <util/arr-len.h>
 
@@ -21,9 +22,9 @@ ZHelpInfo zapup_get_help() {
     return (ZHelpInfo) {
         .name = Z_SV("zapup"),
         .desc = Z_SV(
-            " Version manager for The Zap Programming Language:\n"
-            " github: https://github.com/thezaplang/zap\n"
-            " website: https://zaplang.xyz"
+            " Version manager for The " BOLD "Zap Programming Language: " RESET "\n"
+            " " BOLD "github: " RESET " https://github.com/thezaplang/zap\n"
+            " " BOLD "website:" RESET " https://zaplang.xyz"
         ),
 
         .global_flags = help_global_flags,
@@ -37,7 +38,7 @@ ZHelpInfo zapup_get_help() {
 
         .footer = Z_SV(
             "For bug reports and more information visit: https://github.com/maqi-x/zapup.\n"
-            " Licensed under the GNU General Public License v3."
+            "Licensed under the GNU General Public License v3."
         ),
     };
 }

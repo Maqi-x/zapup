@@ -12,11 +12,11 @@ void z_cli_print_help(const ZHelpInfo* info, FILE* out) {
     }
     fputc('\n', out);
 
-    fputs(BOLD "global flags:\n" RESET, out);
+    fputs(BOLD "Global flags:\n" RESET, out);
     z_cli_print_help_flags(info->global_flags, info->global_flags_count, out);
     fputc('\n', out);
 
-    fputs(BOLD "build flags:\n" RESET, out);
+    fputs(BOLD "Build flags:\n" RESET, out);
     fputs("those flags works for commands that builds zap\n", out);
     fputs("for now: " BOLD "install and sync" RESET "\n", out);
     z_cli_print_help_flags(info->build_flags, info->build_flags_count, out);
@@ -30,7 +30,6 @@ void z_cli_print_help(const ZHelpInfo* info, FILE* out) {
     }
 
     if (info->footer.len > 0) {
-        fputc(' ', out);
         z_sv_print(info->footer, out);
         fputc('\n', out);
     }
@@ -65,7 +64,7 @@ void z_cli_print_help_flags(const ZHelpFlag* flags, usize count, FILE* out) {
 }
 
 void z_cli_print_help_cmd(const ZHelpCommand* cmd, FILE* out) {
-    fprintf(out, BOLD Z_SV_FMT "command:\n" RESET, Z_SV_FARG(cmd->name));
+    fprintf(out, BOLD Z_SV_FMT " command:\n" RESET, Z_SV_FARG(cmd->name));
 
     if (cmd->desc.len > 0) {
         fputc(' ', out);
