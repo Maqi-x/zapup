@@ -9,30 +9,30 @@ void test_pathbuf_sanitize(void) {
     z_pathbuf_init(&pb);
 
     z_pathbuf_clear(&pb);
-    z_pathbuf_init_from(&pb, Z_PV("my:file*.txt"));
+    z_pathbuf_append(&pb, Z_PV("my:file*.txt"));
     z_pathbuf_sanitize(&pb);
     TEST_ASSERT_TRUE(z_strbuf_eql_to_cstr(&pb, "my-file-.txt"));
 
     z_pathbuf_clear(&pb);
-    z_pathbuf_init_from(&pb, Z_PV("invalid<chars>|in?path\"quote.txt"));
+    z_pathbuf_append(&pb, Z_PV("invalid<chars>|in?path\"quote.txt"));
     z_pathbuf_sanitize(&pb);
     TEST_ASSERT_TRUE(z_strbuf_eql_to_cstr(&pb, "invalid-chars--in-path-quote.txt"));
 
     z_pathbuf_clear(&pb);
-    z_pathbuf_init_from(&pb, Z_PV("dir:one/file:two.txt"));
+    z_pathbuf_append(&pb, Z_PV("dir:one/file:two.txt"));
     z_pathbuf_sanitize(&pb);
     TEST_ASSERT_TRUE(z_strbuf_eql_to_cstr(&pb, "dir-one/file-two.txt"));
 
 #if Z_PLATFORM_IS_WINDOWS
     z_pathbuf_clear(&pb);
-    z_pathbuf_init_from(&pb, Z_PV("C:\\dir:one\\file:two.txt"));
+    z_pathbuf_append(&pb, Z_PV("C:\\dir:one\\file:two.txt"));
     z_pathbuf_sanitize(&pb);
     TEST_ASSERT_TRUE(z_strbuf_eql_to_cstr(&pb, "C:\\dir-one\\file-two.txt"));
 #endif
 
     z_pathbuf_clear(&pb);
     char ctrl[] = { 'a', 1, 'b', 31, 'c', '\0' };
-    z_pathbuf_init_from(&pb, z_sv_from_cstr(ctrl));
+    z_pathbuf_append(&pb, z_sv_from_cstr(ctrl));
     z_pathbuf_sanitize(&pb);
     TEST_ASSERT_TRUE(z_strbuf_eql_to_cstr(&pb, "a-b-c"));
 
