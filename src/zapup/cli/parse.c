@@ -14,6 +14,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
         { Z_SV("install"),   Z_CLI_CMD_INSTALL },
         { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
         { Z_SV("switch"),    Z_CLI_CMD_SWITCH },
+        { Z_SV("list"),      Z_CLI_CMD_LIST },
         { Z_SV("test"),      Z_CLI_CMD_TEST },
         { Z_SV("sync"),      Z_CLI_CMD_SYNC },
         { Z_SV("help"),      Z_CLI_CMD_HELP },
@@ -178,6 +179,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
     case Z_CLI_CMD_SWITCH:
+    case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
@@ -200,6 +202,8 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.test.version);
     case Z_CLI_CMD_SYNC:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.sync.version);
+    case Z_CLI_CMD_LIST:
+        break;
     case Z_CLI_CMD_HELP:
         if (out->cmd_args.help.target != Z_CLI_CMD_UNKNOWN) {
             return z_cli_unexpected_arg(arg);
@@ -264,6 +268,8 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     case Z_CLI_CMD_SWITCH:
         out->cmd_args.switch_.version = Z_ZAP_VERSION_NULL;
         break;
+    case Z_CLI_CMD_LIST:
+        break;
     case Z_CLI_CMD_TEST:
         out->cmd_args.test.version = Z_ZAP_VERSION_NULL;
         break;
@@ -302,6 +308,7 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return z_cli_check_version(args->cmd_args.uninstall.version);
     case Z_CLI_CMD_SWITCH:
         return z_cli_check_version(args->cmd_args.switch_.version);
+    case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
