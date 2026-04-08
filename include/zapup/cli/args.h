@@ -5,6 +5,7 @@
 typedef enum ZCliCommand {
     Z_CLI_CMD_INSTALL,
     Z_CLI_CMD_UNINSTALL,
+    Z_CLI_CMD_SWITCH,
     Z_CLI_CMD_TEST,
     Z_CLI_CMD_SYNC,
     Z_CLI_CMD_HELP,
@@ -30,6 +31,10 @@ typedef struct ZCliUninstallArgs {
     ZResolvableZapVersion version;
 } ZCliUninstallArgs;
 
+typedef struct ZCliSwitchArgs {
+    ZResolvableZapVersion version;
+} ZCliSwitchArgs;
+
 typedef struct ZCliTestArgs {
     ZResolvableZapVersion version; // optional
 } ZCliTestArgs;
@@ -49,6 +54,7 @@ typedef struct ZCliArgs {
     union {
         ZCliInstallArgs install;
         ZCliUninstallArgs uninstall;
+        ZCliSwitchArgs switch_;
         ZCliTestArgs test;
         ZCliSyncArgs sync;
         ZCliHelpArgs help;
