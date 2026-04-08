@@ -52,10 +52,10 @@ bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out) {
 
     if (!z_strbuf_append(out, v.revspec)) return false;
 
-    switch (v.build) {
-    case Z_BUILD_DEBUG:
-        return z_strbuf_append_cstr(out, ":debug");
-    case Z_BUILD_RELEASE:
-        return z_strbuf_append_cstr(out, ":release");
+    if (v.build == Z_BUILD_DEBUG) {
+        if (!z_strbuf_append_cstr(out, ":debug")) {
+            return false;
+        }
     }
+    return out;
 }
