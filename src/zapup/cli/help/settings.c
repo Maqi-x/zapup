@@ -12,10 +12,12 @@ static ZHelpFlag help_build_flags[] = {
 };
 
 static ZHelpCommand help_commands[] = {
-    { Z_SV("install"),   Z_SV("Install a specific zap version"),   NULL },
-    { Z_SV("uninstall"), Z_SV("Uninstall a specific zap version"), NULL },
-    { Z_SV("sync"),      Z_SV("Sync zap versions with remote"),    NULL },
-    { Z_SV("help"),      Z_SV("Show help for a specific command"), NULL },
+    { Z_SV("install"),   Z_SV("Install a specific zap version"),       NULL },
+    { Z_SV("uninstall"), Z_SV("Uninstall a specific zap version"),     NULL },
+    { Z_SV("test"),      Z_SV("Test a specific zap version (or all)"), NULL },
+    { Z_SV("switch"),    Z_SV("Switch current zap version"),           NULL },
+    { Z_SV("sync"),      Z_SV("Sync zap versions with remote"),        NULL },
+    { Z_SV("help"),      Z_SV("Show help for a specific command"),     NULL },
 };
 
 ZHelpInfo zapup_get_help() {
