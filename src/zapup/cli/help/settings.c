@@ -14,7 +14,7 @@ static ZHelpFlag help_build_flags[] = {
 static ZHelpCommand help_commands[] = {
     { Z_SV("install"),   Z_SV("Install a specific zap version"),   NULL },
     { Z_SV("uninstall"), Z_SV("Uninstall a specific zap version"), NULL },
-    { Z_SV("sync"),      Z_SV("Sync project with a zap version"),  NULL },
+    { Z_SV("sync"),      Z_SV("Sync zap versions with remote"),    NULL },
     { Z_SV("help"),      Z_SV("Show help for a specific command"), NULL },
 };
 
