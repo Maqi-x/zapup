@@ -13,6 +13,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     } table[] = {
         { Z_SV("install"),   Z_CLI_CMD_INSTALL },
         { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
+        { Z_SV("test"),      Z_CLI_CMD_TEST },
         { Z_SV("sync"),      Z_CLI_CMD_SYNC },
         { Z_SV("help"),      Z_CLI_CMD_HELP },
     };
@@ -148,6 +149,7 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
         return z_cli_unknown_long_flag(flag);
@@ -173,6 +175,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
         return z_cli_unknown_short_flag(flag);
@@ -188,6 +191,8 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.uninstall.version);
+    case Z_CLI_CMD_TEST:
+        return z_cli_try_parse_version_into(arg, &out->cmd_args.test.version);
     case Z_CLI_CMD_SYNC:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.sync.version);
     case Z_CLI_CMD_HELP:
@@ -251,6 +256,9 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
         break;
+    case Z_CLI_CMD_TEST:
+        out->cmd_args.test.version = Z_ZAP_VERSION_NULL;
+        break;
     case Z_CLI_CMD_SYNC:
         out->cmd_args.sync.version = Z_ZAP_VERSION_NULL;
         out->cmd_args.sync.build.parallel = false;
@@ -264,6 +272,16 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     }
 }
 
+ZCliParseResult z_cli_check_version(ZResolvableZapVersion ver) {
+    if (z_zap_ver_is_null(ver)) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+            .ctx.str = Z_SV("version"),
+        };
+    }
+    return (ZCliParseResult) { .code = Z_CLI_PARSE_OK };
+}
+
 ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
     switch (args->cmd) {
     case Z_CLI_CMD_UNKNOWN:
@@ -271,23 +289,11 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
             .code = Z_CLI_PARSE_COMMAND_EXPECTED,
         };
     case Z_CLI_CMD_INSTALL:
-        if (z_zap_ver_is_null(args->cmd_args.install.version)) {
-            return (ZCliParseResult) {
-                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-                .ctx.str = Z_SV("version"),
-            };
-        }
-        break;
+        return z_cli_check_version(args->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
-        if (z_zap_ver_is_null(args->cmd_args.uninstall.version)) {
-            return (ZCliParseResult) {
-                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-                .ctx.str = Z_SV("version"),
-            };
-        }
-        break;
+        return z_cli_check_version(args->cmd_args.uninstall.version);
+    case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
-        break;
     case Z_CLI_CMD_HELP:
         break;
     }
