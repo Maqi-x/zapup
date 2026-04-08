@@ -1,6 +1,8 @@
 #include <zapup/output.h>
 #include <defs/platform.h>
 
+#include <zapup/cli/ansi.h>
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -35,22 +37,22 @@ void z_output_valist(ZOutputType type, const char* fmt, va_list args) {
     case Z_OUTPUT_ERROR:
         stream = stderr;
         prefix = "error: ";
-        color = "\033[1;31m"; // bold red
+        color = BOLD RED;
         break;
     case Z_OUTPUT_WARN:
         stream = stderr;
         prefix = "warning: ";
-        color = "\033[1;33m"; // bold yellow
+        color = BOLD YELLOW;
         break;
     case Z_OUTPUT_INFO:
         stream = stdout;
         prefix = "info: ";
-        color = "\033[1;34m"; // bold glue
+        color = BOLD BLUE; 
         break;
     case Z_OUTPUT_DEBUG:
         stream = stdout;
         prefix = "debug: ";
-        color = "\033[1;30m"; // bold gray
+        color = BOLD WHITE; 
         break;
     }
 
