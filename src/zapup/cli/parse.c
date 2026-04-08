@@ -226,19 +226,24 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.test.version);
     case Z_CLI_CMD_SYNC:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.sync.version);
-    case Z_CLI_CMD_WHICH: {
-        if (z_zap_ver_is_null(out->cmd_args.which.version)) {
-            ZCliParseResult ver_res = z_cli_try_parse_version_into(arg, &out->cmd_args.which.version);
-            if (ver_res.code == Z_CLI_PARSE_OK) {
+    case Z_CLI_CMD_WHICH:
+        // hotfix: ugly but works (i think)
+        if (z_zap_ver_is_null(out->cmd_args.which.version) && out->cmd_args.which.tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+            ZCliParseResult tool_res = z_cli_try_parse_tool_into(arg, &out->cmd_args.which.tool);
+            if (tool_res.code == Z_CLI_PARSE_OK) {
                 return Z_CLI_PARSE_RESULT_OK;
             }
-            if (ver_res.code != Z_CLI_PARSE_WRONG_ARG_FORMAT) {
-                return ver_res;
+            if (tool_res.code != Z_CLI_PARSE_WRONG_ARG_FORMAT) {
+                return tool_res;
             }
+            return z_cli_try_parse_version_into(arg, &out->cmd_args.which.version);
         }
 
-        return z_cli_try_parse_tool_into(arg, &out->cmd_args.which.tool);
-    }
+        if (!z_zap_ver_is_null(out->cmd_args.which.version) && out->cmd_args.which.tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+            return z_cli_try_parse_tool_into(arg, &out->cmd_args.which.tool);
+        }
+
+        return z_cli_unexpected_arg(arg);
     case Z_CLI_CMD_LIST:
         break;
     case Z_CLI_CMD_HELP:
