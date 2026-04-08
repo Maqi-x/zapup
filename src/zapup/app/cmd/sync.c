@@ -5,11 +5,7 @@
 #include <zapup/zap/sync.h>
 
 int zapup_sync_single_entry(ZapupApp* app, const ZCliSyncArgs* args, ZVersionIndexEntry* entry) {
-    ZResolvableZapVersion ver = {
-        .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
-        .revspec = z_strbuf_view(&entry->revspec),
-        .build = entry->build,
-    };
+    ZResolvableZapVersion ver = z_version_index_entry_version(entry);
 
     ZStringBuf version_formatted_buf;
     z_strbuf_init(&version_formatted_buf);
