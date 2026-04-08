@@ -5,6 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+ZResolvableZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
+    return (ZResolvableZapVersion) {
+        .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
+        .revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec),
+        .build = entry->build,
+    };
+}
+
 void z_version_index_init(ZVersionIndex* idx) {
     idx->entries = NULL;
     idx->len = 0;

@@ -27,6 +27,8 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
 ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZResolvableZapVersion version);
 ZVersionIndexEntry* z_version_index_find_by_path(ZVersionIndex* idx, ZPathView path);
 
+ZResolvableZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry);
+
 void z_version_index_remove_at(ZVersionIndex* idx, usize i);
 bool z_version_index_remove_by_version(ZVersionIndex* idx, ZResolvableZapVersion version);
 bool z_version_index_remove_by_path(ZVersionIndex* idx, ZPathView path);
