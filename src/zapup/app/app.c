@@ -36,6 +36,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
         return zapup_exec_install(app);
     case Z_CLI_CMD_UNINSTALL:
         return zapup_exec_uninstall(app);
+    case Z_CLI_CMD_TEST:
+        return zapup_exec_test(app);
     case Z_CLI_CMD_SYNC:
         return zapup_exec_sync(app);
     case Z_CLI_CMD_HELP:
