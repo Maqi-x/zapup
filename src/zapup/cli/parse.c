@@ -2,6 +2,7 @@
 #include <zapup/cli/args.h>
 
 #include <zapup/zap/version.h>
+#include <zapup/zap/toolchain.h>
 
 #include <util/arr-len.h>
 #include <util/macros.h>
@@ -14,6 +15,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
         { Z_SV("install"),   Z_CLI_CMD_INSTALL },
         { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
         { Z_SV("switch"),    Z_CLI_CMD_SWITCH },
+        { Z_SV("which"),     Z_CLI_CMD_WHICH },
         { Z_SV("list"),      Z_CLI_CMD_LIST },
         { Z_SV("test"),      Z_CLI_CMD_TEST },
         { Z_SV("sync"),      Z_CLI_CMD_SYNC },
@@ -49,6 +51,25 @@ ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZResolvableZapVers
         };
     }
     *ver = result;
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
+ZCliParseResult z_cli_try_parse_tool_into(ZStringView arg, ZapToolchainElement* tool) {
+    if (*tool != Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+         return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_UNEXPECTED_ARG,
+            .ctx.str = arg,
+        };       
+    }
+
+    ZapToolchainElement parsed = z_parse_zap_toolchain_element(arg);
+    if (parsed == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .ctx.str = arg,
+        };
+    }
+    *tool = parsed;
     return Z_CLI_PARSE_RESULT_OK;
 }
 
@@ -152,6 +173,8 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
     case Z_CLI_CMD_SWITCH:
+    case Z_CLI_CMD_WHICH:
+    case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
@@ -179,6 +202,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
     case Z_CLI_CMD_SWITCH:
+    case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
@@ -202,6 +226,19 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.test.version);
     case Z_CLI_CMD_SYNC:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.sync.version);
+    case Z_CLI_CMD_WHICH: {
+        if (z_zap_ver_is_null(out->cmd_args.which.version)) {
+            ZCliParseResult ver_res = z_cli_try_parse_version_into(arg, &out->cmd_args.which.version);
+            if (ver_res.code == Z_CLI_PARSE_OK) {
+                return Z_CLI_PARSE_RESULT_OK;
+            }
+            if (ver_res.code != Z_CLI_PARSE_WRONG_ARG_FORMAT) {
+                return ver_res;
+            }
+        }
+
+        return z_cli_try_parse_tool_into(arg, &out->cmd_args.which.tool);
+    }
     case Z_CLI_CMD_LIST:
         break;
     case Z_CLI_CMD_HELP:
@@ -278,6 +315,10 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         out->cmd_args.sync.build.parallel = false;
         out->cmd_args.sync.build.max_jobs = 0;
         break;
+    case Z_CLI_CMD_WHICH:
+        out->cmd_args.which.version = Z_ZAP_VERSION_NULL;
+        out->cmd_args.which.tool = Z_TOOLCHAIN_ELEMENT_UNKNOWN;
+        break;
     case Z_CLI_CMD_HELP:
        out->cmd_args.help.target = Z_CLI_CMD_UNKNOWN;
        break;
@@ -308,6 +349,14 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return z_cli_check_version(args->cmd_args.uninstall.version);
     case Z_CLI_CMD_SWITCH:
         return z_cli_check_version(args->cmd_args.switch_.version);
+    case Z_CLI_CMD_WHICH:
+        if (args->cmd_args.which.tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+            return (ZCliParseResult) {
+                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+                .ctx.str = Z_SV("tool"),
+            };
+        }
+        break;
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:

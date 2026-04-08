@@ -1,11 +1,13 @@
 #pragma once
 
+#include <zapup/zap/toolchain.h>
 #include <zapup/zap/version.h>
 
 typedef enum ZCliCommand {
     Z_CLI_CMD_INSTALL,
     Z_CLI_CMD_UNINSTALL,
     Z_CLI_CMD_SWITCH,
+    Z_CLI_CMD_WHICH,
     Z_CLI_CMD_LIST,
     Z_CLI_CMD_TEST,
     Z_CLI_CMD_SYNC,
@@ -39,6 +41,11 @@ typedef struct ZCliSwitchArgs {
     ZResolvableZapVersion version;
 } ZCliSwitchArgs;
 
+typedef struct ZCliWhichArgs {
+    ZResolvableZapVersion version; // optional
+    ZapToolchainElement tool;
+} ZCliWhichArgs;
+
 typedef struct ZCliTestArgs {
     ZResolvableZapVersion version; // optional
 } ZCliTestArgs;
@@ -59,6 +66,8 @@ typedef struct ZCliArgs {
         ZCliInstallArgs install;
         ZCliUninstallArgs uninstall;
         ZCliSwitchArgs switch_;
+        ZCliListArgs list;
+        ZCliWhichArgs which;
         ZCliTestArgs test;
         ZCliSyncArgs sync;
         ZCliHelpArgs help;
