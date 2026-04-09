@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-ZResolvableZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
-    return (ZResolvableZapVersion) {
+ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
+    return (ZapVersion) {
         .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
         .revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec),
         .build = entry->build,
@@ -33,12 +33,12 @@ void z_version_index_free(ZVersionIndex* idx) {
     z_version_index_init(idx);
 }
 
-void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPathView path) {
+void z_version_index_add(ZVersionIndex* idx, ZapVersion version, ZPathView path) {
     if (idx->len >= idx->cap) {
         idx->cap = idx->cap == 0 ? 8 : idx->cap * 2;
         idx->entries = realloc(idx->entries, idx->cap * sizeof(ZVersionIndexEntry));
     }
-    
+
     ZVersionIndexEntry* entry = &idx->entries[idx->len++];
     z_strbuf_init_from(&entry->branch, version.branch);
     z_strbuf_init_from(&entry->revspec, version.revspec);
@@ -46,7 +46,7 @@ void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPat
     z_strbuf_init_from(&entry->path, path);
 }
 
-ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
@@ -80,7 +80,7 @@ void z_version_index_remove_at(ZVersionIndex* idx, usize i) {
     idx->len--;
 }
 
-bool z_version_index_remove_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
@@ -134,7 +134,7 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
                 }
             }
 
-            ZResolvableZapVersion ver = {
+            ZapVersion ver = {
                 .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
                 .revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec)),
                 .build = build,
@@ -163,7 +163,7 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
     yyjson_write_err err;
     usize len;
     char* json = yyjson_mut_write_opts(doc, YYJSON_WRITE_PRETTY, NULL, &len, &err);
-    
+
     bool ok = false;
     if (json) {
         ok = z_strbuf_append(out, z_sv_from_data_and_len(json, len));

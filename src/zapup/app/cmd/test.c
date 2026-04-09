@@ -6,7 +6,7 @@
 
 int zapup_test_single_entry(ZapupApp* app, const ZCliTestArgs* args, ZVersionIndexEntry* entry) {
     (void) app, (void) args; // unused for now
-    ZResolvableZapVersion ver = {
+    ZapVersion ver = {
         .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
         .revspec = z_strbuf_view(&entry->revspec),
         .build = entry->build,

@@ -34,4 +34,4 @@
  *  - The caller should treat `out_repo` and `out_updated` as optional and may
  *    pass NULL if those values are not needed.
  */
-int z_sync_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git_repository** out_repo, bool* out_updated);
+int z_sync_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository** out_repo, bool* out_updated);

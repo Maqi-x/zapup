@@ -6,7 +6,7 @@
 #include <defs/sv.h>
 
 typedef struct ZToolchainConfig {
-    ZResolvableZapVersion active_version;
+    ZapVersion active_version;
 } ZToolchainConfig;
 
 typedef struct ZBuildConfig {

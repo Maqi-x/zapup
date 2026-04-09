@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 
-bool z_run_zap_tests(ZResolvableZapVersion ver, ZPathView path, bool* out_all_tests_passed) {
+bool z_run_zap_tests(ZapVersion ver, ZPathView path, bool* out_all_tests_passed) {
     (void) ver; // maybe needed in the future
     if (out_all_tests_passed) {
         *out_all_tests_passed = false;
@@ -21,7 +21,7 @@ bool z_run_zap_tests(ZResolvableZapVersion ver, ZPathView path, bool* out_all_te
         .cwd = path,
         .argv = Z_STRING_VIEWS(z_pathbuf_as_view(&run_tests_sh_path)),
     };
-    
+
     ZCmdRunResult result = z_cmd_run(&test_command);
     if (result.status != Z_CMD_OK) {
         return false;

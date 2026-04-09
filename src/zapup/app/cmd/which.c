@@ -7,7 +7,7 @@
 int zapup_exec_which(ZapupApp* app) {
     const ZCliWhichArgs* args = &app->args.cmd_args.which;
 
-    const ZResolvableZapVersion ver =
+    const ZapVersion ver =
         !z_zap_ver_is_null(args->version)
         ? args->version
         : app->cfg.toolchain.active_version;

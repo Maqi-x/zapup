@@ -13,7 +13,7 @@ int zapup_exec_install(ZapupApp* app) {
 
     const ZCliInstallArgs* args = &app->args.cmd_args.install;
 
-    ZResolvableZapVersion v = args->version;
+    ZapVersion v = args->version;
 
     ZPathBuf out_path;
     zapup_get_version_dir_init(app, v, &out_path);

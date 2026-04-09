@@ -8,7 +8,7 @@
 #include <defs/sv.h>
 #include <util/pathview.h>
 
-static inline bool is_dynamic_revspec(ZResolvableZapVersion ver) {
+static inline bool is_dynamic_revspec(ZapVersion ver) {
     return !z_sv_is_null(ver.revspec) && z_sv_eql(ver.revspec, Z_SV("HEAD"));
 }
 
@@ -104,7 +104,7 @@ static int checkout_and_move_ref(git_repository* repo, const git_oid* remote_oid
     return err;
 }
 
-int z_sync_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git_repository** out_repo, bool* out_updated) {
+int z_sync_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository** out_repo, bool* out_updated) {
     int err = 0;
     git_repository* repo = NULL;
     git_reference* resolved_head = NULL;

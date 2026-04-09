@@ -1,11 +1,11 @@
 #include <zapup/zap/version.h>
 
-ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
+ZapVersion z_parse_zap_version(ZStringView s) {
     if (s.len == 0) {
         return Z_ZAP_VERSION_NULL;
     }
 
-    ZResolvableZapVersion v = {
+    ZapVersion v = {
         .branch = Z_SV_NULL,
         .revspec = s,
         .build = Z_BUILD_RELEASE,
@@ -40,7 +40,7 @@ ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
     return v;
 }
 
-bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out) {
+bool z_format_zap_version(ZapVersion v, ZStringBuf* out) {
     if (z_zap_ver_is_null(v)) {
         return false;
     }
