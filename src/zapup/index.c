@@ -6,10 +6,9 @@
 #include <string.h>
 
 ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
-    ZStringView r = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+    ZStringView r = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
     ZapVersion v = (ZapVersion) {
         .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
-        .ref_kind = Z_REF_REVSPEC,
         .revspec = r,
         .build = entry->build,
     };
@@ -17,6 +16,8 @@ ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
     if (z_sv_eql(r, Z_SV("HEAD")) || z_sv_eql(r, Z_SV("latest"))) {
         v.ref_kind = Z_REF_LATEST;
         v.revspec = Z_SV_NULL;
+    } else {
+        v.ref_kind = Z_REF_REVSPEC;
     }
 
     return v;
@@ -60,11 +61,10 @@ ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersi
         ZVersionIndexEntry* entry = &idx->entries[i];
 
         ZStringView entry_branch = z_strbuf_view(&entry->branch);
-        ZStringView entry_revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
 
         ZRefKind entry_ref_kind = Z_REF_REVSPEC;
-        if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
-            z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
+        if (z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
             entry_ref_kind = Z_REF_LATEST;
         }
 
@@ -113,11 +113,10 @@ bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
         ZVersionIndexEntry* entry = &idx->entries[i];
 
         ZStringView entry_branch = z_strbuf_view(&entry->branch);
-        ZStringView entry_revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
 
         ZRefKind entry_ref_kind = Z_REF_REVSPEC;
-        if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
-            z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
+        if (z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
             entry_ref_kind = Z_REF_LATEST;
         }
 
@@ -169,10 +168,11 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
         yyjson_val* v_revspec = yyjson_obj_get(val, "revspec");
         yyjson_val* v_build = yyjson_obj_get(val, "build");
         yyjson_val* v_path = yyjson_obj_get(val, "path");
+        yyjson_val* v_ref_type = yyjson_obj_get(val, "ref_type");
 
-        if (v_branch && v_revspec && v_path) {
+        if (v_branch && v_path) {
             ZBuildType build = Z_BUILD_RELEASE;
-            if (v_build) {
+            if (v_build && yyjson_is_str(v_build)) {
                 const char* bstr = yyjson_get_str(v_build);
                 if (bstr && strcmp(bstr, "debug") == 0) {
                     build = Z_BUILD_DEBUG;
@@ -180,19 +180,40 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
             }
 
             ZStringView branch_sv = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch));
-            ZStringView revspec_sv = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+            ZStringView revspec_sv = z_sv_from_data_and_len("", 0);
+            if (v_revspec && yyjson_is_str(v_revspec)) {
+                revspec_sv = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+            }
 
             ZapVersion ver;
             ver.branch = branch_sv;
             ver.build = build;
 
-            if (z_sv_is_null(revspec_sv) || revspec_sv.len == 0 ||
-                z_sv_eql(revspec_sv, Z_SV("HEAD")) || z_sv_eql(revspec_sv, Z_SV("latest"))) {
-                ver.ref_kind = Z_REF_LATEST;
-                ver.revspec = Z_SV_NULL;
+            if (v_ref_type && yyjson_is_str(v_ref_type)) {
+                const char* rt = yyjson_get_str(v_ref_type);
+                if (rt && strcmp(rt, "latest") == 0) {
+                    ver.ref_kind = Z_REF_LATEST;
+                    ver.revspec = Z_SV_NULL;
+                } else if (rt && strcmp(rt, "revspec") == 0) {
+                    ver.ref_kind = Z_REF_REVSPEC;
+                    ver.revspec = revspec_sv; /* may be empty string */
+                } else {
+                    if (z_sv_eql(revspec_sv, Z_SV("HEAD")) || z_sv_eql(revspec_sv, Z_SV("latest"))) {
+                        ver.ref_kind = Z_REF_LATEST;
+                        ver.revspec = Z_SV_NULL;
+                    } else {
+                        ver.ref_kind = Z_REF_REVSPEC;
+                        ver.revspec = revspec_sv;
+                    }
+                }
             } else {
-                ver.ref_kind = Z_REF_REVSPEC;
-                ver.revspec = revspec_sv;
+                if (z_sv_eql(revspec_sv, Z_SV("HEAD")) || z_sv_eql(revspec_sv, Z_SV("latest"))) {
+                    ver.ref_kind = Z_REF_LATEST;
+                    ver.revspec = Z_SV_NULL;
+                } else {
+                    ver.ref_kind = Z_REF_REVSPEC;
+                    ver.revspec = revspec_sv;
+                }
             }
 
             ZPathView path = z_sv_from_data_and_len(yyjson_get_str(v_path), yyjson_get_len(v_path));
@@ -210,7 +231,16 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         yyjson_mut_val* obj = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_strn(doc, obj, "branch", entry->branch.data, entry->branch.len);
-        yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
+
+        ZStringView r = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
+        bool is_latest = z_sv_eql(r, Z_SV("HEAD")) || z_sv_eql(r, Z_SV("latest"));
+
+        yyjson_mut_obj_add_str(doc, obj, "ref_type", is_latest ? "latest" : "revspec");
+
+        if (!is_latest) {
+            yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
+        }
+
         yyjson_mut_obj_add_str(doc, obj, "build", entry->build == Z_BUILD_DEBUG ? "debug" : "release");
         yyjson_mut_obj_add_strn(doc, obj, "path", entry->path.data, entry->path.len);
         yyjson_mut_arr_append(root, obj);
