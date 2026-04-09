@@ -32,7 +32,7 @@ int z_clone_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository
     error = git_clone(&repo, Z_ZAP_REPO_URL, path_cstr, &clone_opts);
     if (error != 0) goto cleanup;
 
-    if (!z_sv_is_null(ver.revspec) && !z_sv_eql(ver.revspec, Z_SV("HEAD"))) {
+    if (ver.ref_kind == Z_REF_REVSPEC && !z_sv_is_null(ver.revspec)) {
         revspec_cstr = z_sv_to_cstr_alloc(ver.revspec);
         if (!revspec_cstr) {
             error = -1;
