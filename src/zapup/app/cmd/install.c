@@ -29,11 +29,6 @@ int zapup_exec_install(ZapupApp* app) {
         z_lockfile_unlock(&app->indexlock);
         return 1;
     } else {
-        ZStringBuf buf;
-        z_strbuf_init(&buf);
-        z_format_zap_version(v, &buf);
-        z_sv_print(z_strbuf_view(&buf), stdout);
-
         z_version_index_add(&app->index, v, z_pathbuf_as_view(&out_path));
         const ZapBuildOptions opts = zapup_cli_build_args_to_opts(
             app, &args->build, z_strbuf_view(&out_path), v
