@@ -6,11 +6,20 @@
 #include <string.h>
 
 ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
-    return (ZapVersion) {
+    ZStringView r = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+    ZapVersion v = (ZapVersion) {
         .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
-        .revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec),
+        .ref_kind = Z_REF_REVSPEC,
+        .revspec = r,
         .build = entry->build,
     };
+
+    if (z_sv_eql(r, Z_SV("HEAD")) || z_sv_eql(r, Z_SV("latest"))) {
+        v.ref_kind = Z_REF_HEAD;
+        v.revspec = Z_SV_NULL;
+    }
+
+    return v;
 }
 
 void z_version_index_init(ZVersionIndex* idx) {
@@ -49,9 +58,28 @@ void z_version_index_add(ZVersionIndex* idx, ZapVersion version, ZPathView path)
 ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
-        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
-            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
-            entry->build == version.build) {
+
+        ZStringView entry_branch = z_strbuf_view(&entry->branch);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+
+        ZRefKind entry_ref_kind = Z_REF_REVSPEC;
+        if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
+            z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
+            entry_ref_kind = Z_REF_HEAD;
+        }
+
+        bool ref_equal = false;
+        if (entry_ref_kind == version.ref_kind) {
+            if (entry_ref_kind == Z_REF_REVSPEC) {
+                ref_equal = z_sv_eql(entry_revspec, version.revspec);
+            } else {
+                ref_equal = true;
+            }
+        } else {
+            ref_equal = false;
+        }
+
+        if (z_sv_eql(entry_branch, version.branch) && ref_equal && entry->build == version.build) {
             return entry;
         }
     }
@@ -83,9 +111,26 @@ void z_version_index_remove_at(ZVersionIndex* idx, usize i) {
 bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
-        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
-            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
-            entry->build == version.build) {
+
+        ZStringView entry_branch = z_strbuf_view(&entry->branch);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec);
+
+        ZRefKind entry_ref_kind = Z_REF_REVSPEC;
+        if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
+            z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
+            entry_ref_kind = Z_REF_HEAD;
+        }
+
+        bool ref_equal = false;
+        if (entry_ref_kind == version.ref_kind) {
+            if (entry_ref_kind == Z_REF_REVSPEC) {
+                ref_equal = z_sv_eql(entry_revspec, version.revspec);
+            } else {
+                ref_equal = true;
+            }
+        }
+
+        if (z_sv_eql(entry_branch, version.branch) && ref_equal && entry->build == version.build) {
             z_version_index_remove_at(idx, i);
             return true;
         }
@@ -134,11 +179,22 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
                 }
             }
 
-            ZapVersion ver = {
-                .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
-                .revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec)),
-                .build = build,
-            };
+            ZStringView branch_sv = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch));
+            ZStringView revspec_sv = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+
+            ZapVersion ver;
+            ver.branch = branch_sv;
+            ver.build = build;
+
+            if (z_sv_is_null(revspec_sv) || revspec_sv.len == 0 ||
+                z_sv_eql(revspec_sv, Z_SV("HEAD")) || z_sv_eql(revspec_sv, Z_SV("latest"))) {
+                ver.ref_kind = Z_REF_HEAD;
+                ver.revspec = Z_SV_NULL;
+            } else {
+                ver.ref_kind = Z_REF_REVSPEC;
+                ver.revspec = revspec_sv;
+            }
+
             ZPathView path = z_sv_from_data_and_len(yyjson_get_str(v_path), yyjson_get_len(v_path));
             z_version_index_add(idx, ver, path);
         }
