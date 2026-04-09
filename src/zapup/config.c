@@ -41,17 +41,47 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
             }
 
             yyjson_val* v_revspec = yyjson_obj_get(v_active, "revspec");
-            if (yyjson_is_str(v_revspec)) {
-                cfg->toolchain.active_version.revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
-            }
-
+            yyjson_val* v_ref_type = yyjson_obj_get(v_active, "ref_type");
             yyjson_val* v_build = yyjson_obj_get(v_active, "build");
+
             if (yyjson_is_str(v_build)) {
                 const char* bstr = yyjson_get_str(v_build);
                 if (bstr && strcmp(bstr, "debug") == 0) {
                     cfg->toolchain.active_version.build = Z_BUILD_DEBUG;
                 } else if (bstr && strcmp(bstr, "release") == 0) {
                     cfg->toolchain.active_version.build = Z_BUILD_RELEASE;
+                }
+            }
+
+            ZStringView rev = z_sv_from_data_and_len("", 0);
+            if (v_revspec && yyjson_is_str(v_revspec)) {
+                rev = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+            }
+
+            if (v_ref_type && yyjson_is_str(v_ref_type)) {
+                const char* rt = yyjson_get_str(v_ref_type);
+                if (rt && strcmp(rt, "latest") == 0) {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
+                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                } else if (rt && strcmp(rt, "revspec") == 0) {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
+                    cfg->toolchain.active_version.revspec = rev;
+                } else {
+                    if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
+                        cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
+                        cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                    } else {
+                        cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
+                        cfg->toolchain.active_version.revspec = rev;
+                    }
+                }
+            } else {
+                if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
+                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                } else {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
+                    cfg->toolchain.active_version.revspec = rev;
                 }
             }
         }
@@ -83,14 +113,32 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
     if (!z_zap_ver_is_null(cfg->toolchain.active_version)) {
         yyjson_mut_val* active = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_val(doc, toolchain, "active_version", active);
-        
-        yyjson_mut_obj_add_strn(doc, active, "branch", 
-            cfg->toolchain.active_version.branch.data, 
-            cfg->toolchain.active_version.branch.len);
-        yyjson_mut_obj_add_strn(doc, active, "revspec", 
-            cfg->toolchain.active_version.revspec.data, 
-            cfg->toolchain.active_version.revspec.len);
-        yyjson_mut_obj_add_str(doc, active, "build", 
+
+        if (!z_sv_is_null(cfg->toolchain.active_version.branch)) {
+            yyjson_mut_obj_add_strn(doc, active, "branch",
+                cfg->toolchain.active_version.branch.data,
+                cfg->toolchain.active_version.branch.len);
+        } else {
+            yyjson_mut_obj_add_strn(doc, active, "branch", "", 0);
+        }
+
+        if (cfg->toolchain.active_version.ref_kind == Z_REF_LATEST) {
+            yyjson_mut_obj_add_str(doc, active, "ref_type", "latest");
+        } else if (cfg->toolchain.active_version.ref_kind == Z_REF_REVSPEC) {
+            yyjson_mut_obj_add_str(doc, active, "ref_type", "revspec");
+            ZStringView rev = z_sv_is_null(cfg->toolchain.active_version.revspec)
+                ? z_sv_from_data_and_len("", 0)
+                : cfg->toolchain.active_version.revspec;
+            yyjson_mut_obj_add_strn(doc, active, "revspec", rev.data, rev.len);
+        } else {
+            yyjson_mut_obj_add_str(doc, active, "ref_type", "revspec");
+            ZStringView rev = z_sv_is_null(cfg->toolchain.active_version.revspec)
+                ? z_sv_from_data_and_len("", 0)
+                : cfg->toolchain.active_version.revspec;
+            yyjson_mut_obj_add_strn(doc, active, "revspec", rev.data, rev.len);
+        }
+
+        yyjson_mut_obj_add_str(doc, active, "build",
             cfg->toolchain.active_version.build == Z_BUILD_DEBUG ? "debug" : "release");
     }
 
@@ -108,7 +156,7 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
     yyjson_write_err err;
     usize len;
     char* json = yyjson_mut_write_opts(doc, YYJSON_WRITE_PRETTY, NULL, &len, &err);
-    
+
     bool ok = false;
     if (json) {
         ok = z_strbuf_append(out, z_sv_from_data_and_len(json, len));

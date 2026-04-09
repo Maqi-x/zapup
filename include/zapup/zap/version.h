@@ -10,17 +10,28 @@ typedef enum ZBuildType {
     Z_BUILD_DEBUG,
 } ZBuildType;
 
-typedef struct ZResolvableZapVersion {
+typedef enum ZRefKind {
+    Z_REF_NONE,
+    Z_REF_LATEST,
+    Z_REF_REVSPEC,
+} ZRefKind;
+
+typedef struct ZapVersion {
     ZStringView branch;
+    ZRefKind ref_kind;
     ZStringView revspec;
     ZBuildType build;
-} ZResolvableZapVersion;
+} ZapVersion;
 
-#define Z_ZAP_VERSION_NULL ((ZResolvableZapVersion) { .branch = Z_SV_NULL, .revspec = Z_SV_NULL })
+#define Z_ZAP_VERSION_NULL ((ZapVersion) { .branch = Z_SV_NULL, .ref_kind = Z_REF_NONE, .revspec = Z_SV_NULL, .build = Z_BUILD_RELEASE })
 
-static inline bool z_zap_ver_is_null(ZResolvableZapVersion v) {
-    return z_sv_is_null(v.branch) && z_sv_is_null(v.revspec);
+static inline bool z_zap_ver_is_null(ZapVersion v) {
+    return z_sv_is_null(v.branch) && v.ref_kind == Z_REF_NONE;
 }
 
-ZResolvableZapVersion z_parse_zap_version(ZStringView s);
-bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out);
+static inline bool z_zap_ver_is_dynamic(ZapVersion v) {
+    return v.ref_kind == Z_REF_LATEST;
+}
+
+ZapVersion z_parse_zap_version(ZStringView s);
+bool z_format_zap_version(ZapVersion v, ZStringBuf* out);

@@ -10,8 +10,8 @@ int zapup_exec_list(ZapupApp* app) {
     }
     for (usize i = 0; i < app->index.len; ++i) {
         ZVersionIndexEntry* entry = &app->index.entries[i];
-        ZResolvableZapVersion ver = z_version_index_entry_version(entry);
-        
+        ZapVersion ver = z_version_index_entry_version(entry);
+
         ZStringBuf version_formatted;
         z_strbuf_init(&version_formatted);
         z_format_zap_version(ver, &version_formatted);

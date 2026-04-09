@@ -18,7 +18,7 @@ int zapup_ensure_index_lock(ZapupApp* app) {
     return 0;
 }
 
-int zapup_get_version_dir_init(ZapupApp* app, ZResolvableZapVersion ver, ZPathBuf* out_path) {
+int zapup_get_version_dir_init(ZapupApp* app, ZapVersion ver, ZPathBuf* out_path) {
     ZStringBuf version_formatted;
     z_strbuf_init(&version_formatted);
     z_format_zap_version(ver, &version_formatted);
@@ -33,7 +33,7 @@ int zapup_get_version_dir_init(ZapupApp* app, ZResolvableZapVersion ver, ZPathBu
 
 ZapBuildOptions zapup_cli_build_args_to_opts(
     ZapupApp* app, const ZCliBuildArgs* args,
-    ZStringView zap_root, ZResolvableZapVersion ver
+    ZStringView zap_root, ZapVersion ver
 ) {
     return (ZapBuildOptions) {
         .zap_root = zap_root,

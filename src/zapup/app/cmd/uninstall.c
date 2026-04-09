@@ -9,7 +9,7 @@ int zapup_exec_uninstall(ZapupApp* app) {
     int res = zapup_ensure_index_lock(app);
     if (res != 0) return res;
 
-    ZResolvableZapVersion v = app->args.cmd_args.uninstall.version;
+    ZapVersion v = app->args.cmd_args.uninstall.version;
     ZVersionIndexEntry* entry = z_version_index_find_by_version(&app->index, v);
 
     ZStringBuf version_formatted;
@@ -36,11 +36,9 @@ int zapup_exec_uninstall(ZapupApp* app) {
     }
 
     z_version_index_remove_by_version(&app->index, v);
-    
+
     z_strbuf_destroy(&version_formatted);
     z_lockfile_unlock(&app->indexlock);
     z_show_info("uninstalled successfully");
     return 0;
-} 
-
-
+}

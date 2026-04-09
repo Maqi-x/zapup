@@ -35,7 +35,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     };
 }
 
-ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZResolvableZapVersion* ver) {
+ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZapVersion* ver) {
     if (!z_zap_ver_is_null(*ver)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_UNEXPECTED_ARG,
@@ -43,7 +43,7 @@ ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZResolvableZapVers
         };
     }
 
-    ZResolvableZapVersion result = z_parse_zap_version(arg);
+    ZapVersion result = z_parse_zap_version(arg);
     if (z_zap_ver_is_null(result)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
@@ -59,7 +59,7 @@ ZCliParseResult z_cli_try_parse_tool_into(ZStringView arg, ZapToolchainElement* 
          return (ZCliParseResult) {
             .code = Z_CLI_PARSE_UNEXPECTED_ARG,
             .ctx.str = arg,
-        };       
+        };
     }
 
     ZapToolchainElement parsed = z_parse_zap_toolchain_element(arg);
@@ -332,7 +332,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     }
 }
 
-ZCliParseResult z_cli_check_version(ZResolvableZapVersion ver) {
+ZCliParseResult z_cli_check_version(ZapVersion ver) {
     if (z_zap_ver_is_null(ver)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,

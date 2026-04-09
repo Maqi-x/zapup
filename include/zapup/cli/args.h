@@ -21,16 +21,16 @@ typedef struct ZCliBuildArgs {
 } ZCliBuildArgs;
 
 typedef struct ZCliInstallArgs {
-    ZResolvableZapVersion version;
+    ZapVersion version;
     ZCliBuildArgs build;
 } ZCliInstallArgs;
 
 typedef struct ZCliUninstallArgs {
-    ZResolvableZapVersion version;
+    ZapVersion version;
 } ZCliUninstallArgs;
 
 typedef struct ZCliSyncArgs {
-    ZResolvableZapVersion version; // optional
+    ZapVersion version; // optional
     ZCliBuildArgs build;
 } ZCliSyncArgs;
 
@@ -38,16 +38,16 @@ typedef struct ZCliListArgs {
 } ZCliListArgs;
 
 typedef struct ZCliSwitchArgs {
-    ZResolvableZapVersion version;
+    ZapVersion version;
 } ZCliSwitchArgs;
 
 typedef struct ZCliWhichArgs {
-    ZResolvableZapVersion version; // optional
+    ZapVersion version; // optional
     ZapToolchainElement tool;
 } ZCliWhichArgs;
 
 typedef struct ZCliTestArgs {
-    ZResolvableZapVersion version; // optional
+    ZapVersion version; // optional
 } ZCliTestArgs;
 
 typedef struct ZCliHelpArgs {

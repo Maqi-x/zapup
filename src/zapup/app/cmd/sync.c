@@ -5,7 +5,7 @@
 #include <zapup/zap/sync.h>
 
 int zapup_sync_single_entry(ZapupApp* app, const ZCliSyncArgs* args, ZVersionIndexEntry* entry) {
-    ZResolvableZapVersion ver = z_version_index_entry_version(entry);
+    ZapVersion ver = z_version_index_entry_version(entry);
 
     ZStringBuf version_formatted_buf;
     z_strbuf_init(&version_formatted_buf);

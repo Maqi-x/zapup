@@ -16,7 +16,7 @@ typedef struct ZapBuildResult {
 
 typedef struct ZapBuildOptions {
     ZPathView zap_root;
-    ZResolvableZapVersion ver;
+    ZapVersion ver;
     bool parallel;
     int max_jobs;
     ZStringView cc;

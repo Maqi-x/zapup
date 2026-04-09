@@ -5,4 +5,4 @@
 
 #include <git2.h>
 
-int z_clone_zap_repo_with_version(ZResolvableZapVersion ver, ZPathView path, git_repository** out_repo);
+int z_clone_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository** out_repo);

@@ -1,12 +1,13 @@
 #include <zapup/zap/version.h>
 
-ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
+ZapVersion z_parse_zap_version(ZStringView s) {
     if (s.len == 0) {
         return Z_ZAP_VERSION_NULL;
     }
 
-    ZResolvableZapVersion v = {
+    ZapVersion v = {
         .branch = Z_SV_NULL,
+        .ref_kind = Z_REF_REVSPEC,
         .revspec = s,
         .build = Z_BUILD_RELEASE,
     };
@@ -34,13 +35,18 @@ ZResolvableZapVersion z_parse_zap_version(ZStringView s) {
     if (v.revspec.len == 0) {
         return Z_ZAP_VERSION_NULL;
     }
-    if (z_sv_eql(v.revspec, Z_SV("latest"))) {
-        v.revspec = Z_SV("HEAD");
+
+    if (z_sv_eql(v.revspec, Z_SV("latest")) || z_sv_eql(v.revspec, Z_SV("HEAD"))) {
+        v.ref_kind = Z_REF_LATEST;
+        v.revspec = Z_SV_NULL;
+    } else {
+        v.ref_kind = Z_REF_REVSPEC;
     }
+
     return v;
 }
 
-bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out) {
+bool z_format_zap_version(ZapVersion v, ZStringBuf* out) {
     if (z_zap_ver_is_null(v)) {
         return false;
     }
@@ -50,12 +56,16 @@ bool z_format_zap_version(ZResolvableZapVersion v, ZStringBuf* out) {
         if (!z_strbuf_append_char(out, '@')) return false;
     }
 
-    if (!z_strbuf_append(out, v.revspec)) return false;
+    if (v.ref_kind == Z_REF_REVSPEC) {
+        if (!z_strbuf_append(out, v.revspec)) return false;
+    } else if (v.ref_kind == Z_REF_LATEST) {
+        if (!z_strbuf_append_cstr(out, "latest")) return false;
+    }
 
     if (v.build == Z_BUILD_DEBUG) {
         if (!z_strbuf_append_cstr(out, ":debug")) {
             return false;
         }
     }
-    return out;
+    return true;
 }

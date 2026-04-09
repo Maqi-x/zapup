@@ -5,12 +5,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-ZResolvableZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
-    return (ZResolvableZapVersion) {
+ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
+    ZStringView sv_revspec = entry->revspec.len == 0
+        ? z_sv_from_data_and_len("", 0)
+        : z_strbuf_view(&entry->revspec);
+
+    ZapVersion v = (ZapVersion) {
         .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
-        .revspec = entry->revspec.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->revspec),
+        .ref_kind = Z_REF_REVSPEC,
+        .revspec = sv_revspec,
         .build = entry->build,
     };
+
+    if (entry->ref_kind == Z_REF_LATEST) {
+        v.ref_kind = Z_REF_LATEST;
+        v.revspec = Z_SV_NULL;
+    } else {
+        v.ref_kind = Z_REF_REVSPEC;
+    }
+
+    return v;
 }
 
 void z_version_index_init(ZVersionIndex* idx) {
@@ -33,25 +47,39 @@ void z_version_index_free(ZVersionIndex* idx) {
     z_version_index_init(idx);
 }
 
-void z_version_index_add(ZVersionIndex* idx, ZResolvableZapVersion version, ZPathView path) {
+void z_version_index_add(ZVersionIndex* idx, ZapVersion version, ZPathView path) {
     if (idx->len >= idx->cap) {
         idx->cap = idx->cap == 0 ? 8 : idx->cap * 2;
         idx->entries = realloc(idx->entries, idx->cap * sizeof(ZVersionIndexEntry));
     }
-    
+
     ZVersionIndexEntry* entry = &idx->entries[idx->len++];
     z_strbuf_init_from(&entry->branch, version.branch);
     z_strbuf_init_from(&entry->revspec, version.revspec);
+    entry->ref_kind = version.ref_kind; /* preserve explicit ref_kind */
     entry->build = version.build;
     z_strbuf_init_from(&entry->path, path);
 }
 
-ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
-        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
-            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
-            entry->build == version.build) {
+
+        ZStringView entry_branch = z_strbuf_view(&entry->branch);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
+
+        ZRefKind entry_ref_kind = (entry->ref_kind == Z_REF_LATEST) ? Z_REF_LATEST : Z_REF_REVSPEC;
+
+        bool ref_equal = false;
+        if (entry_ref_kind == version.ref_kind) {
+            if (entry_ref_kind == Z_REF_REVSPEC) {
+                ref_equal = z_sv_eql(entry_revspec, version.revspec);
+            } else {
+                ref_equal = true;
+            }
+        }
+
+        if (z_sv_eql(entry_branch, version.branch) && ref_equal && entry->build == version.build) {
             return entry;
         }
     }
@@ -80,12 +108,25 @@ void z_version_index_remove_at(ZVersionIndex* idx, usize i) {
     idx->len--;
 }
 
-bool z_version_index_remove_by_version(ZVersionIndex* idx, ZResolvableZapVersion version) {
+bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
     for (usize i = 0; i < idx->len; i++) {
         ZVersionIndexEntry* entry = &idx->entries[i];
-        if (z_sv_eql(z_strbuf_view(&entry->branch), version.branch) &&
-            z_sv_eql(z_strbuf_view(&entry->revspec), version.revspec) &&
-            entry->build == version.build) {
+
+        ZStringView entry_branch = z_strbuf_view(&entry->branch);
+        ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
+
+        ZRefKind entry_ref_kind = (entry->ref_kind == Z_REF_LATEST) ? Z_REF_LATEST : Z_REF_REVSPEC;
+
+        bool ref_equal = false;
+        if (entry_ref_kind == version.ref_kind) {
+            if (entry_ref_kind == Z_REF_REVSPEC) {
+                ref_equal = z_sv_eql(entry_revspec, version.revspec);
+            } else {
+                ref_equal = true;
+            }
+        }
+
+        if (z_sv_eql(entry_branch, version.branch) && ref_equal && entry->build == version.build) {
             z_version_index_remove_at(idx, i);
             return true;
         }
@@ -124,21 +165,42 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
         yyjson_val* v_revspec = yyjson_obj_get(val, "revspec");
         yyjson_val* v_build = yyjson_obj_get(val, "build");
         yyjson_val* v_path = yyjson_obj_get(val, "path");
+        yyjson_val* v_ref_type = yyjson_obj_get(val, "ref_type");
 
-        if (v_branch && v_revspec && v_path) {
+        if (v_branch && v_path) {
             ZBuildType build = Z_BUILD_RELEASE;
-            if (v_build) {
+            if (v_build && yyjson_is_str(v_build)) {
                 const char* bstr = yyjson_get_str(v_build);
                 if (bstr && strcmp(bstr, "debug") == 0) {
                     build = Z_BUILD_DEBUG;
                 }
             }
 
-            ZResolvableZapVersion ver = {
-                .branch = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch)),
-                .revspec = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec)),
-                .build = build,
-            };
+            ZStringView branch_sv = z_sv_from_data_and_len(yyjson_get_str(v_branch), yyjson_get_len(v_branch));
+
+            ZStringView revspec_sv = z_sv_from_data_and_len("", 0);
+            if (v_revspec && yyjson_is_str(v_revspec)) {
+                revspec_sv = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+            }
+
+            ZapVersion ver;
+            ver.branch = branch_sv;
+            ver.build = build;
+
+            if (v_ref_type && yyjson_is_str(v_ref_type)) {
+                const char* rt = yyjson_get_str(v_ref_type);
+                if (rt && strcmp(rt, "latest") == 0) {
+                    ver.ref_kind = Z_REF_LATEST;
+                    ver.revspec = Z_SV_NULL;
+                } else {
+                    ver.ref_kind = Z_REF_REVSPEC;
+                    ver.revspec = revspec_sv;
+                }
+            } else {
+                ver.ref_kind = Z_REF_REVSPEC;
+                ver.revspec = revspec_sv;
+            }
+
             ZPathView path = z_sv_from_data_and_len(yyjson_get_str(v_path), yyjson_get_len(v_path));
             z_version_index_add(idx, ver, path);
         }
@@ -154,7 +216,15 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
         ZVersionIndexEntry* entry = &idx->entries[i];
         yyjson_mut_val* obj = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_strn(doc, obj, "branch", entry->branch.data, entry->branch.len);
-        yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
+
+        bool is_latest = (entry->ref_kind == Z_REF_LATEST);
+
+        yyjson_mut_obj_add_str(doc, obj, "ref_type", is_latest ? "latest" : "revspec");
+
+        if (!is_latest) {
+            yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
+        }
+
         yyjson_mut_obj_add_str(doc, obj, "build", entry->build == Z_BUILD_DEBUG ? "debug" : "release");
         yyjson_mut_obj_add_strn(doc, obj, "path", entry->path.data, entry->path.len);
         yyjson_mut_arr_append(root, obj);
@@ -163,7 +233,7 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
     yyjson_write_err err;
     usize len;
     char* json = yyjson_mut_write_opts(doc, YYJSON_WRITE_PRETTY, NULL, &len, &err);
-    
+
     bool ok = false;
     if (json) {
         ok = z_strbuf_append(out, z_sv_from_data_and_len(json, len));

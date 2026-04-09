@@ -5,13 +5,13 @@
 
 int zapup_exec_switch(ZapupApp* app) {
     const ZCliSwitchArgs* args = &app->args.cmd_args.switch_;
-   
-    ZResolvableZapVersion old_ver = app->cfg.toolchain.active_version;
+
+    ZapVersion old_ver = app->cfg.toolchain.active_version;
 
     ZStringBuf new_version_formatted;
     z_strbuf_init(&new_version_formatted);
     z_format_zap_version(args->version, &new_version_formatted);
-   
+
     if (!z_version_index_find_by_version(&app->index, args->version)) {
         z_show_error("Version " Z_SV_FMT " not found", Z_SV_FARG(z_strbuf_view(&new_version_formatted)));
         z_strbuf_destroy(&new_version_formatted);
