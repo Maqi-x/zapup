@@ -12,7 +12,7 @@ typedef enum ZBuildType {
 
 typedef enum ZRefKind {
     Z_REF_NONE,
-    Z_REF_HEAD,
+    Z_REF_LATEST,
     Z_REF_REVSPEC,
 } ZRefKind;
 
@@ -30,7 +30,7 @@ static inline bool z_zap_ver_is_null(ZapVersion v) {
 }
 
 static inline bool z_zap_ver_is_dynamic(ZapVersion v) {
-    return v.ref_kind == Z_REF_HEAD;
+    return v.ref_kind == Z_REF_LATEST;
 }
 
 ZapVersion z_parse_zap_version(ZStringView s);

@@ -15,7 +15,7 @@ ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
     };
 
     if (z_sv_eql(r, Z_SV("HEAD")) || z_sv_eql(r, Z_SV("latest"))) {
-        v.ref_kind = Z_REF_HEAD;
+        v.ref_kind = Z_REF_LATEST;
         v.revspec = Z_SV_NULL;
     }
 
@@ -65,7 +65,7 @@ ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersi
         ZRefKind entry_ref_kind = Z_REF_REVSPEC;
         if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
             z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
-            entry_ref_kind = Z_REF_HEAD;
+            entry_ref_kind = Z_REF_LATEST;
         }
 
         bool ref_equal = false;
@@ -118,7 +118,7 @@ bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
         ZRefKind entry_ref_kind = Z_REF_REVSPEC;
         if (z_sv_is_null(entry_revspec) || entry_revspec.len == 0 ||
             z_sv_eql(entry_revspec, Z_SV("HEAD")) || z_sv_eql(entry_revspec, Z_SV("latest"))) {
-            entry_ref_kind = Z_REF_HEAD;
+            entry_ref_kind = Z_REF_LATEST;
         }
 
         bool ref_equal = false;
@@ -188,7 +188,7 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
 
             if (z_sv_is_null(revspec_sv) || revspec_sv.len == 0 ||
                 z_sv_eql(revspec_sv, Z_SV("HEAD")) || z_sv_eql(revspec_sv, Z_SV("latest"))) {
-                ver.ref_kind = Z_REF_HEAD;
+                ver.ref_kind = Z_REF_LATEST;
                 ver.revspec = Z_SV_NULL;
             } else {
                 ver.ref_kind = Z_REF_REVSPEC;

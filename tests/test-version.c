@@ -16,7 +16,7 @@ void test_parse_commit_only(void) {
 void test_parse_branch_and_commit(void) {
     ZapVersion v = z_parse_zap_version(Z_SV("main@HEAD"));
     TEST_ASSERT_EQUAL_SV(Z_SV("main"), v.branch);
-    TEST_ASSERT_EQUAL_INT(Z_REF_HEAD, v.ref_kind);
+    TEST_ASSERT_EQUAL_INT(Z_REF_LATEST, v.ref_kind);
     TEST_ASSERT_EQUAL_INT(Z_BUILD_RELEASE, v.build);
 }
 
@@ -37,7 +37,7 @@ void test_parse_commit_debug(void) {
 void test_parse_branch_commit_debug(void) {
     ZapVersion v = z_parse_zap_version(Z_SV("main@HEAD:debug"));
     TEST_ASSERT_EQUAL_SV(Z_SV("main"), v.branch);
-    TEST_ASSERT_EQUAL_INT(Z_REF_HEAD, v.ref_kind);
+    TEST_ASSERT_EQUAL_INT(Z_REF_LATEST, v.ref_kind);
     TEST_ASSERT_EQUAL_INT(Z_BUILD_DEBUG, v.build);
 }
 
@@ -78,7 +78,7 @@ void test_format_commit_only(void) {
 }
 
 void test_format_branch_and_commit(void) {
-    ZapVersion v = { .branch = Z_SV("main"), .ref_kind = Z_REF_HEAD, .revspec = Z_SV_NULL, .build = Z_BUILD_RELEASE };
+    ZapVersion v = { .branch = Z_SV("main"), .ref_kind = Z_REF_LATEST, .revspec = Z_SV_NULL, .build = Z_BUILD_RELEASE };
     ZStringBuf sb;
     z_strbuf_init(&sb);
     z_format_zap_version(v, &sb);
@@ -96,7 +96,7 @@ void test_format_commit_debug(void) {
 }
 
 void test_format_branch_commit_debug(void) {
-    ZapVersion v = { .branch = Z_SV("main"), .ref_kind = Z_REF_HEAD, .revspec = Z_SV_NULL, .build = Z_BUILD_DEBUG };
+    ZapVersion v = { .branch = Z_SV("main"), .ref_kind = Z_REF_LATEST, .revspec = Z_SV_NULL, .build = Z_BUILD_DEBUG };
     ZStringBuf sb;
     z_strbuf_init(&sb);
     z_format_zap_version(v, &sb);

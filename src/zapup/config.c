@@ -44,7 +44,7 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
             if (yyjson_is_str(v_revspec)) {
                 ZStringView rev = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
                 if (z_sv_is_null(rev) || rev.len == 0 || z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
-                    cfg->toolchain.active_version.ref_kind = Z_REF_HEAD;
+                    cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
                     cfg->toolchain.active_version.revspec = Z_SV_NULL;
                 } else {
                     cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
@@ -103,7 +103,7 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
             yyjson_mut_obj_add_strn(doc, active, "revspec",
                 cfg->toolchain.active_version.revspec.data,
                 cfg->toolchain.active_version.revspec.len);
-        } else if (cfg->toolchain.active_version.ref_kind == Z_REF_HEAD) {
+        } else if (cfg->toolchain.active_version.ref_kind == Z_REF_LATEST) {
             yyjson_mut_obj_add_str(doc, active, "revspec", "HEAD");
         } else {
             yyjson_mut_obj_add_strn(doc, active, "revspec", "", 0);
