@@ -9,7 +9,7 @@
 #include <util/pathview.h>
 
 static inline bool is_dynamic_revspec(ZapVersion ver) {
-    return !z_sv_is_null(ver.revspec) && z_sv_eql(ver.revspec, Z_SV("HEAD"));
+    return ver.ref_kind == Z_REF_HEAD;
 }
 
 static int open_repository_at_path(ZPathView path, git_repository** out_repo) {
