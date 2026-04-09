@@ -2,6 +2,7 @@
 
 #include <git2.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <stdbool.h>
 
@@ -135,6 +136,102 @@ int z_sync_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository*
     if (err != 0) goto cleanup;
     if (resolved_head == NULL) {
         err = 0;
+        goto cleanup;
+    }
+
+    /* If user requested `stable`, resolve the most-recent tag in the repo
+       (by tagger time or commit time) and checkout its target commit in detached HEAD. */
+    if (ver.ref_kind == Z_REF_STABLE) {
+        git_strarray tag_names = {0};
+        int terr = git_tag_list(&tag_names, repo);
+        if (terr != 0) {
+            /* treat fetch/list errors as non-fatal upstream; propagate error */
+            giterr_clear();
+            err = terr;
+            goto cleanup;
+        }
+
+        long long best_time = LLONG_MIN;
+        const char* best_name = NULL;
+        git_oid best_oid;
+        for (size_t ti = 0; ti < tag_names.count; ++ti) {
+            const char* tname = tag_names.strings[ti];
+            git_object* obj = NULL;
+            if (git_revparse_single(&obj, repo, tname) != 0) {
+                giterr_clear();
+                continue;
+            }
+
+            git_object_t type = git_object_type(obj);
+            long long t = LLONG_MIN;
+            git_oid target_oid;
+
+            if (type == GIT_OBJECT_TAG) {
+                git_tag* tag = (git_tag*)obj;
+                const git_signature* tagger = git_tag_tagger(tag);
+                if (tagger) {
+                    t = (long long)tagger->when.time;
+                    git_oid_cpy(&target_oid, git_tag_target_id(tag));
+                } else {
+                    git_object* target = NULL;
+                    if (git_tag_target(&target, tag) == 0 && target) {
+                        if (git_object_type(target) == GIT_OBJECT_COMMIT) {
+                            t = (long long)git_commit_time((git_commit*)target);
+                            git_oid_cpy(&target_oid, git_commit_id((git_commit*)target));
+                        }
+                        git_object_free(target);
+                    }
+                }
+            } else if (type == GIT_OBJECT_COMMIT) {
+                t = (long long)git_commit_time((git_commit*)obj);
+                git_oid_cpy(&target_oid, git_commit_id((git_commit*)obj));
+            }
+
+            git_object_free(obj);
+
+            if (t > best_time) {
+                best_time = t;
+                best_name = tname;
+                git_oid_cpy(&best_oid, &target_oid);
+            }
+        }
+
+        git_strarray_dispose(&tag_names);
+
+        if (!best_name) {
+            /* no tags found */
+            err = 0;
+            goto cleanup;
+        }
+
+        const git_oid* head_oid = git_reference_target(resolved_head);
+        if (head_oid && git_oid_cmp(head_oid, &best_oid) == 0) {
+            if (out_updated) *out_updated = false;
+            err = 0;
+            goto cleanup;
+        }
+
+        git_object* commit_obj = NULL;
+        err = git_object_lookup(&commit_obj, repo, &best_oid, GIT_OBJECT_COMMIT);
+        if (err != 0) goto cleanup;
+
+        git_checkout_options checkout_opts;
+        git_checkout_options_init(&checkout_opts, GIT_CHECKOUT_OPTIONS_VERSION);
+        checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE;
+
+        err = git_checkout_tree(repo, commit_obj, &checkout_opts);
+        if (err != 0) {
+            git_object_free(commit_obj);
+            goto cleanup;
+        }
+
+        err = git_repository_set_head_detached(repo, &best_oid);
+        git_object_free(commit_obj);
+        if (err != 0) goto cleanup;
+
+        if (out_updated) *out_updated = true;
+
+        /* stable handled; proceed to cleanup/return like dynamic updates */
         goto cleanup;
     }
 

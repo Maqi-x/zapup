@@ -7,7 +7,7 @@
 
 ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
     ZStringView sv_revspec = entry->revspec.len == 0
-        ? z_sv_from_data_and_len("", 0)
+        ? Z_SV_NULL
         : z_strbuf_view(&entry->revspec);
 
     ZapVersion v = (ZapVersion) {

@@ -39,6 +39,9 @@ ZapVersion z_parse_zap_version(ZStringView s) {
     if (z_sv_eql(v.revspec, Z_SV("latest")) || z_sv_eql(v.revspec, Z_SV("HEAD"))) {
         v.ref_kind = Z_REF_LATEST;
         v.revspec = Z_SV_NULL;
+    } else if (z_sv_eql(v.revspec, Z_SV("stable"))) {
+        v.ref_kind = Z_REF_STABLE;
+        v.revspec = Z_SV_NULL;
     } else {
         v.ref_kind = Z_REF_REVSPEC;
     }
@@ -60,6 +63,8 @@ bool z_format_zap_version(ZapVersion v, ZStringBuf* out) {
         if (!z_strbuf_append(out, v.revspec)) return false;
     } else if (v.ref_kind == Z_REF_LATEST) {
         if (!z_strbuf_append_cstr(out, "latest")) return false;
+    } else if (v.ref_kind == Z_REF_STABLE) {
+        if (!z_strbuf_append_cstr(out, "stable")) return false;
     }
 
     if (v.build == Z_BUILD_DEBUG) {
