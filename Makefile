@@ -53,6 +53,9 @@ WARNINGS   := -Wall -Wextra
 
 COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
 
+-include external/yyjson.mk
+-include external/libgit2.mk
+
 ifeq ($(BUILD),debug)
 	CFLAGS := $(COMMON_CFLAGS) -Og -g
 	LDFLAGS :=
@@ -80,8 +83,6 @@ DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
 all: dirs $(TARGET)
 
--include external/yyjson.mk
--include external/libgit2.mk
 -include tests/build.mk
 
 submodules:
