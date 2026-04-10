@@ -53,9 +53,10 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
                 }
             }
 
-            ZStringView rev = z_sv_from_data_and_len("", 0);
+            ZStringView rev = Z_SV_NULL;
             if (v_revspec && yyjson_is_str(v_revspec)) {
                 rev = z_sv_from_data_and_len(yyjson_get_str(v_revspec), yyjson_get_len(v_revspec));
+                if (rev.len == 0) rev = Z_SV_NULL;
             }
 
             if (v_ref_type && yyjson_is_str(v_ref_type)) {
@@ -64,28 +65,6 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
                     cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
                     cfg->toolchain.active_version.revspec = Z_SV_NULL;
                 } else if (rt && strcmp(rt, "stable") == 0) {
-                    cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
-                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
-                } else if (rt && strcmp(rt, "revspec") == 0) {
-                    cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
-                    cfg->toolchain.active_version.revspec = rev;
-                } else {
-                    if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
-                        cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
-                        cfg->toolchain.active_version.revspec = Z_SV_NULL;
-                    } else if (z_sv_eql(rev, Z_SV("stable"))) {
-                        cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
-                        cfg->toolchain.active_version.revspec = Z_SV_NULL;
-                    } else {
-                        cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
-                        cfg->toolchain.active_version.revspec = rev;
-                    }
-                }
-            } else {
-                if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
-                    cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
-                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
-                } else if (z_sv_eql(rev, Z_SV("stable"))) {
                     cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
                     cfg->toolchain.active_version.revspec = Z_SV_NULL;
                 } else {
