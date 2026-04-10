@@ -7,7 +7,40 @@
 
 #define Z_ZAP_REPO_URL "https://github.com/thezaplang/zap.git"
 
-int z_clone_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository** out_repo) {
+typedef struct CloneProgressPayload {
+    ZapCloneProgressCallback callback;
+    void* user_data;
+} CloneProgressPayload;
+
+static int z_clone_transfer_progress_cb(const git_indexer_progress* stats, void* payload_ptr) {
+    if (!stats || !payload_ptr) return 0;
+
+    CloneProgressPayload* payload = (CloneProgressPayload*)payload_ptr;
+    if (!payload->callback) return 0;
+
+    int percent = 0;
+    if (stats->total_objects > 0) {
+        percent = (int)((stats->received_objects * 100U) / stats->total_objects);
+    } else if (stats->received_objects > 0) {
+        percent = 100;
+    }
+
+    ZapCloneProgress progress = {
+        .received_objects = stats->received_objects,
+        .total_objects = stats->total_objects,
+        .indexed_objects = stats->indexed_objects,
+        .received_bytes = stats->received_bytes,
+        .percent = percent,
+    };
+
+    payload->callback(&progress, payload->user_data);
+    return 0;
+}
+
+int z_clone_zap_repo_with_version_progress(
+    ZapVersion ver, ZPathView path, git_repository** out_repo,
+    ZapCloneProgressCallback progress_cb, void* progress_user_data
+) {
     int error = 0;
     if (out_repo) *out_repo = NULL;
 
@@ -23,6 +56,15 @@ int z_clone_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository
 
     git_clone_options clone_opts;
     git_clone_options_init(&clone_opts, GIT_CLONE_OPTIONS_VERSION);
+    CloneProgressPayload progress_payload = {
+        .callback = progress_cb,
+        .user_data = progress_user_data,
+    };
+
+    if (progress_cb) {
+        clone_opts.fetch_opts.callbacks.transfer_progress = z_clone_transfer_progress_cb;
+        clone_opts.fetch_opts.callbacks.payload = &progress_payload;
+    }
 
     if (!z_sv_is_null(ver.branch)) {
         branch_cstr = z_sv_to_cstr_alloc(ver.branch);
@@ -144,4 +186,8 @@ cleanup:
     free(path_cstr);
 
     return error;
+}
+
+int z_clone_zap_repo_with_version(ZapVersion ver, ZPathView path, git_repository** out_repo) {
+    return z_clone_zap_repo_with_version_progress(ver, path, out_repo, NULL, NULL);
 }
