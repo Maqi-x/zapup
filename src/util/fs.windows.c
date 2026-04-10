@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
     if (path.len == 0) return false;
@@ -377,6 +378,94 @@ bool z_get_self_executable(ZPathBuf* out) {
     bool ok2 = z_path_abs(z_pathbuf_as_view(&abs_buf2), out);
     z_pathbuf_destroy(&abs_buf2);
     return ok2;
+}
+
+static ZPathView z_trim_path_env_entry(ZPathView sv) {
+    while (sv.len > 0 && isspace((unsigned char)sv.data[0])) {
+        sv.data++;
+        sv.len--;
+    }
+    while (sv.len > 0 && isspace((unsigned char)sv.data[sv.len - 1])) {
+        sv.len--;
+    }
+    return sv;
+}
+
+static bool z_path_sv_eql_icase(ZStringView a, ZStringView b) {
+    if (a.len != b.len) return false;
+    for (usize i = 0; i < a.len; i++) {
+        unsigned char ca = (unsigned char)a.data[i];
+        unsigned char cb = (unsigned char)b.data[i];
+        if (tolower(ca) != tolower(cb)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool z_path_in_system_path(ZPathView directory) {
+    if (directory.len == 0) return false;
+
+    DWORD cap = GetEnvironmentVariableA("PATH", NULL, 0);
+    if (cap == 0) {
+        return false;
+    }
+
+    char* path_heap = (char*)malloc(cap);
+    if (!path_heap) {
+        return false;
+    }
+
+    DWORD n = GetEnvironmentVariableA("PATH", path_heap, cap);
+    if (n == 0 || n >= cap) {
+        free(path_heap);
+        return false;
+    }
+
+    ZPathBuf want;
+    z_pathbuf_init(&want);
+    if (!z_path_abs(directory, &want)) {
+        free(path_heap);
+        z_pathbuf_destroy(&want);
+        return false;
+    }
+    ZPathView want_v = z_pathbuf_as_view(&want);
+
+    const char* p = path_heap;
+    while (*p != '\0') {
+        const char* start = p;
+        while (*p != '\0' && *p != ';') {
+            p++;
+        }
+        ZPathView raw = z_sv_from_data_and_len(start, (usize)(p - start));
+        if (*p == ';') {
+            p++;
+        }
+
+        ZPathView entry = z_trim_path_env_entry(raw);
+        if (entry.len == 0) {
+            continue;
+        }
+
+        ZPathBuf entry_abs;
+        z_pathbuf_init(&entry_abs);
+        if (!z_path_abs(entry, &entry_abs)) {
+            z_pathbuf_destroy(&entry_abs);
+            continue;
+        }
+
+        bool match = z_path_sv_eql_icase(want_v, z_pathbuf_as_view(&entry_abs));
+        z_pathbuf_destroy(&entry_abs);
+        if (match) {
+            free(path_heap);
+            z_pathbuf_destroy(&want);
+            return true;
+        }
+    }
+
+    free(path_heap);
+    z_pathbuf_destroy(&want);
+    return false;
 }
 
 #endif // Z_PLATFORM_IS_WINDOWS

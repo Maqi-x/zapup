@@ -17,6 +17,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #if Z_PLATFORM_IS_MACOS
 #include <mach-o/dyld.h>
@@ -383,6 +384,66 @@ bool z_get_self_executable(ZPathBuf* out) {
 
     return false;
 #endif
+}
+
+static ZPathView z_trim_path_env_entry(ZPathView sv) {
+    while (sv.len > 0 && isspace((unsigned char)sv.data[0])) {
+        sv.data++;
+        sv.len--;
+    }
+    while (sv.len > 0 && isspace((unsigned char)sv.data[sv.len - 1])) {
+        sv.len--;
+    }
+    return sv;
+}
+
+bool z_path_in_system_path(ZPathView directory) {
+    if (directory.len == 0) return false;
+
+    const char* path_env = getenv("PATH");
+    if (!path_env || path_env[0] == '\0') return false;
+
+    ZPathBuf want;
+    z_pathbuf_init(&want);
+    if (!z_path_abs(directory, &want)) {
+        z_pathbuf_destroy(&want);
+        return false;
+    }
+    ZPathView want_v = z_pathbuf_as_view(&want);
+
+    const char* p = path_env;
+    while (*p != '\0') {
+        const char* start = p;
+        while (*p != '\0' && *p != ':') {
+            p++;
+        }
+        ZPathView raw = z_sv_from_data_and_len(start, (usize)(p - start));
+        if (*p == ':') {
+            p++;
+        }
+
+        ZPathView entry = z_trim_path_env_entry(raw);
+        if (entry.len == 0) {
+            continue;
+        }
+
+        ZPathBuf entry_abs;
+        z_pathbuf_init(&entry_abs);
+        if (!z_path_abs(entry, &entry_abs)) {
+            z_pathbuf_destroy(&entry_abs);
+            continue;
+        }
+
+        bool match = z_sv_eql(want_v, z_pathbuf_as_view(&entry_abs));
+        z_pathbuf_destroy(&entry_abs);
+        if (match) {
+            z_pathbuf_destroy(&want);
+            return true;
+        }
+    }
+
+    z_pathbuf_destroy(&want);
+    return false;
 }
 
 #endif // Z_PLATFORM_IS_POSIX
