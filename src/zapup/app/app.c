@@ -27,7 +27,7 @@ void zapup_init(ZapupApp* app) {
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     ZCliParseResult err = z_cli_parse_args(argc, argv, &app->args);
     if (err.code != Z_CLI_PARSE_OK) {
-        z_show_error("cli parse error: %d", err.code);
+        z_parse_result_print(&err, Z_OUTPUT_ERROR);
         return 1;
     }
 
