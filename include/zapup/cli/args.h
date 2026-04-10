@@ -10,6 +10,7 @@ typedef enum ZCliCommand {
     Z_CLI_CMD_SWITCH,
     Z_CLI_CMD_WHICH,
     Z_CLI_CMD_LIST,
+    Z_CLI_CMD_SHOW,
     Z_CLI_CMD_TEST,
     Z_CLI_CMD_SYNC,
     Z_CLI_CMD_HELP,
@@ -43,6 +44,9 @@ typedef struct ZCliSyncArgs {
 typedef struct ZCliListArgs {
 } ZCliListArgs;
 
+typedef struct ZCliShowArgs {
+} ZCliShowArgs;
+
 typedef struct ZCliSwitchArgs {
     ZapVersion version;
 } ZCliSwitchArgs;
@@ -74,6 +78,7 @@ typedef struct ZCliArgs {
         ZCliReshimArgs reshim;
         ZCliSwitchArgs switch_;
         ZCliListArgs list;
+        ZCliShowArgs show;
         ZCliWhichArgs which;
         ZCliTestArgs test;
         ZCliSyncArgs sync;

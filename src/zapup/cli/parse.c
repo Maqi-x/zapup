@@ -19,6 +19,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
         { Z_SV("select"),    Z_CLI_CMD_SWITCH },
         { Z_SV("which"),     Z_CLI_CMD_WHICH },
         { Z_SV("list"),      Z_CLI_CMD_LIST },
+        { Z_SV("show"),      Z_CLI_CMD_SHOW },
         { Z_SV("test"),      Z_CLI_CMD_TEST },
         { Z_SV("sync"),      Z_CLI_CMD_SYNC },
         { Z_SV("update"),    Z_CLI_CMD_SYNC },
@@ -192,6 +193,7 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
+    case Z_CLI_CMD_SHOW:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
@@ -229,6 +231,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
+    case Z_CLI_CMD_SHOW:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
@@ -272,7 +275,8 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
 
         return z_cli_unexpected_arg(arg);
     case Z_CLI_CMD_LIST:
-        break;
+    case Z_CLI_CMD_SHOW:
+        return z_cli_unexpected_arg(arg);
     case Z_CLI_CMD_HELP:
         if (out->cmd_args.help.target != Z_CLI_CMD_UNKNOWN) {
             return z_cli_unexpected_arg(arg);
@@ -341,6 +345,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         out->cmd_args.switch_.version = Z_ZAP_VERSION_NULL;
         break;
     case Z_CLI_CMD_LIST:
+    case Z_CLI_CMD_SHOW:
         break;
     case Z_CLI_CMD_TEST:
         out->cmd_args.test.version = Z_ZAP_VERSION_NULL;
@@ -398,8 +403,9 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return z_cli_check_version(args->cmd_args.switch_.version);
     case Z_CLI_CMD_WHICH:
         return z_cli_check_tool(args->cmd_args.which.tool);
-        break;
+
     case Z_CLI_CMD_LIST:
+    case Z_CLI_CMD_SHOW:
     case Z_CLI_CMD_TEST:
     case Z_CLI_CMD_SYNC:
     case Z_CLI_CMD_HELP:
