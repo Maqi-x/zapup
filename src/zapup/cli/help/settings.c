@@ -59,6 +59,13 @@ static ZHelpCommand help_commands[] = {
         .flags = Z_HELP_NO_FLAGS,
     },
     {
+        .cmd = Z_CLI_CMD_SHOW,
+        .name = Z_SV("show"),
+        .desc = Z_SV("Show currently active version"),
+        .usage = Z_HELP_NO_USAGE_FIELDS,
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
         .cmd = Z_CLI_CMD_WHICH,
         .name = Z_SV("which"),
         .desc = Z_SV("Show the path to a Zap tool"),
