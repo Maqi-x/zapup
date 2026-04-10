@@ -63,12 +63,18 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
                 if (rt && strcmp(rt, "latest") == 0) {
                     cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
                     cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                } else if (rt && strcmp(rt, "stable") == 0) {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
+                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
                 } else if (rt && strcmp(rt, "revspec") == 0) {
                     cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
                     cfg->toolchain.active_version.revspec = rev;
                 } else {
                     if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
                         cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
+                        cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                    } else if (z_sv_eql(rev, Z_SV("stable"))) {
+                        cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
                         cfg->toolchain.active_version.revspec = Z_SV_NULL;
                     } else {
                         cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
@@ -78,6 +84,9 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
             } else {
                 if (z_sv_eql(rev, Z_SV("HEAD")) || z_sv_eql(rev, Z_SV("latest"))) {
                     cfg->toolchain.active_version.ref_kind = Z_REF_LATEST;
+                    cfg->toolchain.active_version.revspec = Z_SV_NULL;
+                } else if (z_sv_eql(rev, Z_SV("stable"))) {
+                    cfg->toolchain.active_version.ref_kind = Z_REF_STABLE;
                     cfg->toolchain.active_version.revspec = Z_SV_NULL;
                 } else {
                     cfg->toolchain.active_version.ref_kind = Z_REF_REVSPEC;
@@ -124,6 +133,8 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
 
         if (cfg->toolchain.active_version.ref_kind == Z_REF_LATEST) {
             yyjson_mut_obj_add_str(doc, active, "ref_type", "latest");
+        } else if (cfg->toolchain.active_version.ref_kind == Z_REF_STABLE) {
+            yyjson_mut_obj_add_str(doc, active, "ref_type", "stable");
         } else if (cfg->toolchain.active_version.ref_kind == Z_REF_REVSPEC) {
             yyjson_mut_obj_add_str(doc, active, "ref_type", "revspec");
             ZStringView rev = z_sv_is_null(cfg->toolchain.active_version.revspec)
