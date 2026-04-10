@@ -53,8 +53,10 @@ WARNINGS   := -Wall -Wextra
 
 COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
 
+ifeq ($(PLATFORM),windows)
 -include external/yyjson.mk
 -include external/libgit2.mk
+endif
 
 ifeq ($(BUILD),debug)
 	CFLAGS := $(COMMON_CFLAGS) -Og -g
@@ -83,6 +85,11 @@ DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
 all: dirs $(TARGET)
 
+# i dont fucking know why, but it works
+ifeq ($(PLATFORM),posix)
+-include external/yyjson.mk
+-include external/libgit2.mk
+endif
 -include tests/build.mk
 
 submodules:
