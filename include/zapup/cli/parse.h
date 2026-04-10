@@ -18,6 +18,7 @@ typedef enum ZCliParseErrorCode {
 
 typedef struct ZCliParseResult {
     ZCliParseErrorCode code;
+    ZStringView arg_name;
     union {
         ZStringView str;
         char c;
@@ -25,5 +26,6 @@ typedef struct ZCliParseResult {
 } ZCliParseResult;
 
 #define Z_CLI_PARSE_RESULT_OK ((ZCliParseResult) { .code = Z_CLI_PARSE_OK })
+#define Z_CLI_PARSE_RESULT_STOP ((ZCliParseResult) { .code = _Z_CLI_PARSE_STOP })
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);

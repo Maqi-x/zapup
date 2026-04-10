@@ -42,6 +42,7 @@ ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZapVersion* ver) {
     if (!z_zap_ver_is_null(*ver)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_UNEXPECTED_ARG,
+            .arg_name = Z_SV_NULL,
             .ctx.str = arg,
         };
     }
@@ -50,7 +51,8 @@ ZCliParseResult z_cli_try_parse_version_into(ZStringView arg, ZapVersion* ver) {
     if (z_zap_ver_is_null(result)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
-            .ctx.str = arg,
+            .arg_name = arg,
+            .ctx.str = Z_SV("version"),
         };
     }
     *ver = result;
@@ -61,6 +63,7 @@ ZCliParseResult z_cli_try_parse_tool_into(ZStringView arg, ZapToolchainElement* 
     if (*tool != Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
          return (ZCliParseResult) {
             .code = Z_CLI_PARSE_UNEXPECTED_ARG,
+            .arg_name = Z_SV_NULL,
             .ctx.str = arg,
         };
     }
@@ -69,6 +72,7 @@ ZCliParseResult z_cli_try_parse_tool_into(ZStringView arg, ZapToolchainElement* 
     if (parsed == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .arg_name = Z_SV("tool"),
             .ctx.str = arg,
         };
     }
@@ -90,6 +94,7 @@ ZCliParseResult z_cli_parse_jobs(ZStringView val, int* jobs) {
     if (val.len >= sizeof(buf)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .arg_name = Z_SV("max-jobs"),
             .ctx.str = val,
         };
     }
@@ -101,6 +106,7 @@ ZCliParseResult z_cli_parse_jobs(ZStringView val, int* jobs) {
     if (*end != '\0' || res < 0) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .arg_name = Z_SV("max-jobs"),
             .ctx.str = val,
         };
     }
@@ -131,7 +137,7 @@ ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
     if (z_sv_eql(flag, Z_SV("help"))) {
         out->cmd_args.help.target = out->cmd;
         out->cmd = Z_CLI_CMD_HELP;
-        return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
+        return Z_CLI_PARSE_RESULT_STOP;
     }
     return z_cli_unknown_long_flag(flag);
 }
@@ -140,7 +146,7 @@ ZCliParseResult z_cli_handle_global_short_flag(char flag, ZCliArgs* out) {
     if (flag == 'h') {
         out->cmd_args.help.target = out->cmd;
         out->cmd = Z_CLI_CMD_HELP;
-        return (ZCliParseResult) { .code = _Z_CLI_PARSE_STOP };
+        return Z_CLI_PARSE_RESULT_STOP;
     }
     return z_cli_unknown_short_flag(flag);
 }
@@ -346,7 +352,7 @@ ZCliParseResult z_cli_check_version(ZapVersion ver) {
     if (z_zap_ver_is_null(ver)) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-            .ctx.str = Z_SV("version"),
+            .arg_name = Z_SV("version"),
         };
     }
     return Z_CLI_PARSE_RESULT_OK;
@@ -356,7 +362,7 @@ ZCliParseResult z_cli_check_tool(ZapToolchainElement tool) {
     if (tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
         return (ZCliParseResult) {
             .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-            .ctx.str = Z_SV("tool"),
+            .arg_name = Z_SV("tool"),
         };
     }
     return Z_CLI_PARSE_RESULT_OK;
