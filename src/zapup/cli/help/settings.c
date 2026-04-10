@@ -19,7 +19,10 @@ static ZHelpCommand help_commands[] = {
         .usage = Z_HELP_USAGE_FIELDS(
             Z_HELP_USAGE("version", "Zap version to install", false)
         ),
-        .flags = Z_HELP_FLAG_ARRAY_FROM(help_build_flags),
+        .flags = Z_HELP_FLAG_ARRAY(
+            { Z_SV("-j[N], --parallel[=N]"), Z_SV("Enable parallel building with N jobs") },
+            { Z_SV("--test, -t"),            Z_SV("Run tests after instalation") },
+        ),
     },
     {
         .cmd = Z_CLI_CMD_UNINSTALL,
