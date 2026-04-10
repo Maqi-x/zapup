@@ -8,7 +8,7 @@ git clone https://github.com/Maqi-x/zapup.git "$TMP_DIR/zapup"
 cd "$TMP_DIR/zapup"
 
 make submodules
-make
+make -j$(($(nproc)-1))
 sudo make install
 
 cd /
