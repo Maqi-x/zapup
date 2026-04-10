@@ -65,6 +65,11 @@ bool z_paths_find_versions_dir(ZPathBuf* out) {
     return z_pathbuf_join(out, Z_PV("versions"));
 }
 
+bool z_paths_find_shims_dir(ZPathBuf* out) {
+    if (!z_paths_find_data_dir(out)) return false;
+    return z_pathbuf_join(out, Z_PV("shims"));
+}
+
 bool z_paths_find_index_file(ZPathBuf* out) {
     if (!z_paths_find_versions_dir(out)) return false;
     return z_pathbuf_join(out, Z_PV("index.json"));
@@ -85,6 +90,7 @@ bool z_paths_config_load(ZPathsConfig* cfg) {
     if (!z_paths_find_data_dir(&cfg->data))         return false;
     if (!z_paths_find_cache_dir(&cfg->cache))       return false;
     if (!z_paths_find_versions_dir(&cfg->versions)) return false;
+    if (!z_paths_find_shims_dir(&cfg->shims))       return false;
     if (!z_paths_find_cfg_file(&cfg->cfgfile))      return false;
     if (!z_paths_find_index_file(&cfg->indexfile))  return false;
     if (!z_paths_find_index_lock(&cfg->indexlock))  return false;
@@ -99,6 +105,7 @@ bool z_paths_ensure_exists(ZPathsConfig* cfg) {
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->cache)))     return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->data)))      return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->config)))    return false;
+    if (!z_mkdir_all(z_pathbuf_as_view(&cfg->shims)))     return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions)))  return false;
     if (!create_file(z_pathbuf_as_view(&cfg->cfgfile)))   return false;
     if (!create_file(z_pathbuf_as_view(&cfg->indexfile))) return false;
@@ -107,6 +114,7 @@ bool z_paths_ensure_exists(ZPathsConfig* cfg) {
 
 void z_paths_config_destroy(ZPathsConfig* cfg) {
     z_pathbuf_destroy(&cfg->data);
+    z_pathbuf_destroy(&cfg->shims);
     z_pathbuf_destroy(&cfg->cache);
     z_pathbuf_destroy(&cfg->config);
     z_pathbuf_destroy(&cfg->versions);

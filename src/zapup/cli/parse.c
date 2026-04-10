@@ -14,6 +14,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     } table[] = {
         { Z_SV("install"),   Z_CLI_CMD_INSTALL },
         { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
+        { Z_SV("reshim"),    Z_CLI_CMD_RESHIM },
         { Z_SV("switch"),    Z_CLI_CMD_SWITCH },
         { Z_SV("select"),    Z_CLI_CMD_SWITCH },
         { Z_SV("which"),     Z_CLI_CMD_WHICH },
@@ -174,6 +175,7 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_RESHIM:
     case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
@@ -203,6 +205,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_RESHIM:
     case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
@@ -222,6 +225,8 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.uninstall.version);
+    case Z_CLI_CMD_RESHIM:
+        return z_cli_try_parse_tool_into(arg, &out->cmd_args.reshim.tool);
     case Z_CLI_CMD_SWITCH:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.switch_.version);
     case Z_CLI_CMD_TEST:
@@ -309,6 +314,9 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
         break;
+    case Z_CLI_CMD_RESHIM:
+        out->cmd_args.reshim.tool = Z_TOOLCHAIN_ELEMENT_UNKNOWN;
+        break;
     case Z_CLI_CMD_SWITCH:
         out->cmd_args.switch_.version = Z_ZAP_VERSION_NULL;
         break;
@@ -341,7 +349,17 @@ ZCliParseResult z_cli_check_version(ZapVersion ver) {
             .ctx.str = Z_SV("version"),
         };
     }
-    return (ZCliParseResult) { .code = Z_CLI_PARSE_OK };
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
+ZCliParseResult z_cli_check_tool(ZapToolchainElement tool) {
+    if (tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+            .ctx.str = Z_SV("tool"),
+        };
+    }
+    return Z_CLI_PARSE_RESULT_OK;
 }
 
 ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
@@ -354,15 +372,12 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return z_cli_check_version(args->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_check_version(args->cmd_args.uninstall.version);
+    case Z_CLI_CMD_RESHIM:
+        return z_cli_check_tool(args->cmd_args.which.tool);
     case Z_CLI_CMD_SWITCH:
         return z_cli_check_version(args->cmd_args.switch_.version);
     case Z_CLI_CMD_WHICH:
-        if (args->cmd_args.which.tool == Z_TOOLCHAIN_ELEMENT_UNKNOWN) {
-            return (ZCliParseResult) {
-                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-                .ctx.str = Z_SV("tool"),
-            };
-        }
+        return z_cli_check_tool(args->cmd_args.which.tool);
         break;
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_TEST:

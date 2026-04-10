@@ -16,6 +16,11 @@
 #include <dirent.h>
 #include <string.h>
 #include <limits.h>
+#include <stdio.h>
+
+#if Z_PLATFORM_IS_MACOS
+#include <mach-o/dyld.h>
+#endif
 
 bool z_path_abs(ZPathView path, ZPathBuf* out_abs) {
     if (path.len == 0) return false;
@@ -251,7 +256,7 @@ static bool z_rm_recursive_internal(ZPathBuf* pb) {
         if (!z_rm_recursive_internal(pb)) {
             success = false;
         }
-        
+
         pb->len = original_len;
         if (!success) break;
     }
@@ -328,6 +333,56 @@ bool z_set_executable(ZPathView path, bool enabled) {
     int res = chmod(cpath, mode);
     free(cpath);
     return res == 0;
+}
+
+bool z_get_self_executable(ZPathBuf* out) {
+    if (!out) return false;
+
+#if Z_PLATFORM_IS_MACOS
+    uint32_t size = 0;
+    if (_NSGetExecutablePath(NULL, &size) == 0) {
+        return false;
+    }
+
+    char* buf = (char*)malloc(size);
+    if (!buf) return false;
+
+    if (_NSGetExecutablePath(buf, &size) != 0) {
+        free(buf);
+        return false;
+    }
+
+    char* real = realpath(buf, NULL);
+    z_strbuf_clear(out);
+    bool success = false;
+    if (real) {
+        success = z_strbuf_append(out, z_sv_from_cstr(real));
+        free(real);
+    } else {
+        success = z_strbuf_append(out, z_sv_from_cstr(buf));
+    }
+
+    free(buf);
+    return success;
+#else
+    char buf[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (len > 0) {
+        buf[len] = '\0';
+        z_strbuf_clear(out);
+        return z_strbuf_append(out, z_sv_from_cstr(buf));
+    }
+
+    char* real = realpath("/proc/self/exe", NULL);
+    if (real) {
+        z_strbuf_clear(out);
+        bool ok = z_strbuf_append(out, z_sv_from_cstr(real));
+        free(real);
+        return ok;
+    }
+
+    return false;
+#endif
 }
 
 #endif // Z_PLATFORM_IS_POSIX

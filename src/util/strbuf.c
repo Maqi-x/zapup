@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #define Z_STRBUF_DEFAULT_CAP 16
 
@@ -11,7 +13,7 @@ static usize _z_strbuf_next_cap(usize current_cap, usize required_min_cap) {
         new_cap = required_min_cap;
     }
     return new_cap;
-} 
+}
 
 bool z_strbuf_init(ZStringBuf* sb) {
     return z_strbuf_init_with_cap(sb, Z_STRBUF_DEFAULT_CAP);
@@ -100,7 +102,7 @@ bool z_strbuf_reserve_exact(ZStringBuf* sb, usize new_cap) {
     if (new_cap <= sb->cap) {
         return true;
     }
-    
+
     char* new_data = realloc(sb->data, new_cap);
     if (new_data == NULL) return false;
 
@@ -133,4 +135,36 @@ bool z_strbuf_append_char(ZStringBuf* sb, char c) {
     sb->data[sb->len] = c;
     sb->len += 1;
     return true;
+}
+
+bool z_strbuf_vappendf(ZStringBuf* sb, const char* fmt, va_list args) {
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int needed = vsnprintf(NULL, 0, fmt, args_copy);
+    va_end(args_copy);
+
+    if (needed < 0) {
+        return false;
+    }
+
+    size_t req = (size_t)needed;
+    if (!z_strbuf_reserve(sb, sb->len + req + 1)) {
+        return false;
+    }
+
+    int written = vsnprintf(sb->data + sb->len, req + 1, fmt, args);
+    if (written < 0) {
+        return false;
+    }
+
+    sb->len += (size_t)written;
+    return true;
+}
+
+bool z_strbuf_appendf(ZStringBuf* sb, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    bool ok = z_strbuf_vappendf(sb, fmt, args);
+    va_end(args);
+    return ok;
 }

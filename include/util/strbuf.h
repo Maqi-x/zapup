@@ -1,7 +1,10 @@
 #pragma once
 
+#include <util/fmt-arg.h>
 #include <defs/sv.h>
+
 #include <stdbool.h>
+#include <stdarg.h>
 
 typedef struct ZStringBuf {
     char* data;
@@ -54,3 +57,6 @@ static inline bool z_strbuf_starts_with(const ZStringBuf* sb, ZStringView prefix
 static inline bool z_strbuf_ends_with(const ZStringBuf* sb, ZStringView suffix) {
     return z_sv_ends_with(z_strbuf_view(sb), suffix);
 }
+
+bool z_strbuf_vappendf(ZStringBuf* sb, const char* fmt, va_list args);
+bool z_strbuf_appendf(ZStringBuf* sb, const char* fmt, ...) Z_PRINTF_FUNCTION(2, 3);
