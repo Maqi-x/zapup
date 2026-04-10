@@ -20,6 +20,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
         { Z_SV("which"),     Z_CLI_CMD_WHICH },
         { Z_SV("list"),      Z_CLI_CMD_LIST },
         { Z_SV("show"),      Z_CLI_CMD_SHOW },
+        { Z_SV("current"),   Z_CLI_CMD_SHOW },
         { Z_SV("test"),      Z_CLI_CMD_TEST },
         { Z_SV("sync"),      Z_CLI_CMD_SYNC },
         { Z_SV("update"),    Z_CLI_CMD_SYNC },
