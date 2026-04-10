@@ -66,5 +66,17 @@ int zapup_exec_reshim(ZapupApp* app) {
             if (result != 0) return result;
         }
     }
+
+    ZPathView shims_dir = z_pathbuf_as_view(&app->paths.shims);
+
+    if (!z_path_in_system_path(shims_dir)) {
+        z_show_warn(
+            "Installed shims to " Z_SV_FMT ", but it's not in PATH.\n"
+            "         Add it to PATH, like this:\n"
+            "           export PATH=\"" Z_SV_FMT ":$PATH\"",
+            Z_SV_FARG(shims_dir), Z_SV_FARG(shims_dir)
+        );  
+    }
+    
     return 0;
 }
