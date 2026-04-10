@@ -1,13 +1,11 @@
 #include <zapup/app/app.h>
 
-#include <zapup/cli/help/settings.h>
-#include <zapup/cli/help/print.h>
-
+#include <zapup/help.h>
 #include <zapup/output.h>
 
 int zapup_exec_help(ZapupApp* app) {
-    (void) app;
     ZHelpInfo info = zapup_get_help();
-    z_cli_print_help(&info, stdout);
+    ZCliCommand target = app->args.cmd_args.help.target;
+    zapup_show_help(&info, target, stdout);
     return 0;
 }

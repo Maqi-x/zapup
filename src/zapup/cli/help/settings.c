@@ -12,12 +12,89 @@ static ZHelpFlag help_build_flags[] = {
 };
 
 static ZHelpCommand help_commands[] = {
-    { Z_SV("install"),   Z_SV("Install a specific zap version"),       NULL },
-    { Z_SV("uninstall"), Z_SV("Uninstall a specific zap version"),     NULL },
-    { Z_SV("test"),      Z_SV("Test a specific zap version (or all)"), NULL },
-    { Z_SV("switch"),    Z_SV("Switch current zap version"),           NULL },
-    { Z_SV("sync"),      Z_SV("Sync zap versions with remote"),        NULL },
-    { Z_SV("help"),      Z_SV("Show help for a specific command"),     NULL },
+    {
+        .cmd = Z_CLI_CMD_INSTALL,
+        .name = Z_SV("install"),
+        .desc = Z_SV("Install a specific Zap version"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Zap version to install", false)
+        ),
+        .flags = Z_HELP_FLAG_ARRAY(
+            { Z_SV("-j[N], --parallel[=N]"), Z_SV("Enable parallel building with N jobs") },
+            { Z_SV("--test, -t"),            Z_SV("Run tests after instalation") },
+        ),
+    },
+    {
+        .cmd = Z_CLI_CMD_UNINSTALL,
+        .name = Z_SV("uninstall"),
+        .desc = Z_SV("Uninstall a specific Zap version"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Installed Zap version to remove", false)
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_RESHIM,
+        .name = Z_SV("reshim"),
+        .desc = Z_SV("Recreate shims for a specific Zap tool"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("tool", "Toolchain element to re-shim (zapc / zap-lsp); All if not specified", true)
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_SWITCH,
+        .name = Z_SV("switch"),
+        .desc = Z_SV("Switch the current Zap version"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Installed Zap version to set as current", false)
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_LIST,
+        .name = Z_SV("list"),
+        .desc = Z_SV("List available and installed Zap versions"),
+        .usage = Z_HELP_NO_USAGE_FIELDS,
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_WHICH,
+        .name = Z_SV("which"),
+        .desc = Z_SV("Show the path to a Zap tool"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Optional Zap version to inspect", true),
+            Z_HELP_USAGE("tool", "Toolchain element to locate (zapc / zap-lsp)", false),
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_TEST,
+        .name = Z_SV("test"),
+        .desc = Z_SV("Test a specific Zap version or all versions"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Optional Zap version to test; All if not specified", true)
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
+    {
+        .cmd = Z_CLI_CMD_SYNC,
+        .name = Z_SV("sync"),
+        .desc = Z_SV("Sync Zap versions with the remote"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("version", "Optional specific version to sync; All if not specified", true)
+        ),
+        .flags = Z_HELP_FLAG_ARRAY_FROM(help_build_flags),
+    },
+    {
+        .cmd = Z_CLI_CMD_HELP,
+        .name = Z_SV("help"),
+        .desc = Z_SV("Show general help or details for one command"),
+        .usage = Z_HELP_USAGE_FIELDS(
+            Z_HELP_USAGE("command", "Optional command name to show detailed help for", true)
+        ),
+        .flags = Z_HELP_NO_FLAGS,
+    },
 };
 
 ZHelpInfo zapup_get_help() {
@@ -29,11 +106,8 @@ ZHelpInfo zapup_get_help() {
             " " BOLD "website:" RESET " https://zaplang.xyz"
         ),
 
-        .global_flags = help_global_flags,
-        .global_flags_count = Z_ARRAY_LEN(help_global_flags),
-
-        .build_flags = help_build_flags,
-        .build_flags_count = Z_ARRAY_LEN(help_build_flags),
+        .global_flags = Z_HELP_FLAG_ARRAY_FROM(help_global_flags),
+        .build_flags = Z_HELP_FLAG_ARRAY_FROM(help_build_flags),
 
         .cmds = help_commands,
         .command_count = Z_ARRAY_LEN(help_commands),
@@ -43,4 +117,18 @@ ZHelpInfo zapup_get_help() {
             "Licensed under the GNU General Public License v3."
         ),
     };
+}
+
+const ZHelpCommand* zapup_find_help_command(const ZHelpInfo* info, ZCliCommand cmd) {
+    if (info == NULL || info->cmds == NULL) {
+        return NULL;
+    }
+
+    for (const ZHelpCommand* it = info->cmds; it < info->cmds + info->command_count; ++it) {
+        if (it->cmd == cmd) {
+            return it;
+        }
+    }
+
+    return NULL;
 }

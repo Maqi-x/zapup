@@ -2,6 +2,7 @@
 #include <zapup/output.h>
 
 #include <zapup/zap/build.h>
+#include <zapup/zap/test.h>
 
 #include <util/fs.h>
 
@@ -29,6 +30,31 @@ int zapup_get_version_dir_init(ZapupApp* app, ZapVersion ver, ZPathBuf* out_path
 
     z_strbuf_destroy(&version_formatted);
     return 0;
+}
+
+int zapup_test_version_at_path(ZapVersion ver, ZPathView path) {
+    ZStringBuf version_formatted_buf;
+    z_strbuf_init(&version_formatted_buf);
+    z_format_zap_version(ver, &version_formatted_buf);
+
+    ZStringView version_formatted = z_strbuf_view(&version_formatted_buf);
+    z_show_info("Testing " Z_SV_FMT, Z_SV_FARG(version_formatted));
+
+    bool all_tests_passed;
+    if (!z_run_zap_tests(ver, path, &all_tests_passed)) {
+        z_show_error("Failed to run tests for " Z_SV_FMT, Z_SV_FARG(version_formatted));
+        z_strbuf_destroy(&version_formatted_buf);
+        return 1;
+    }
+
+    if (all_tests_passed) {
+        z_show_info("All tests passed for version " Z_SV_FMT, Z_SV_FARG(version_formatted));
+    } else {
+        z_show_error("Some tests failed for version " Z_SV_FMT, Z_SV_FARG(version_formatted));
+    }
+
+    z_strbuf_destroy(&version_formatted_buf);
+    return all_tests_passed ? 0 : 1;
 }
 
 ZapBuildOptions zapup_cli_build_args_to_opts(

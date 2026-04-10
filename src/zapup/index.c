@@ -20,6 +20,9 @@ ZapVersion z_version_index_entry_version(ZVersionIndexEntry* entry) {
     if (entry->ref_kind == Z_REF_LATEST) {
         v.ref_kind = Z_REF_LATEST;
         v.revspec = Z_SV_NULL;
+    } else if (entry->ref_kind == Z_REF_STABLE) {
+        v.ref_kind = Z_REF_STABLE;
+        v.revspec = Z_SV_NULL;
     } else {
         v.ref_kind = Z_REF_REVSPEC;
     }
@@ -68,7 +71,10 @@ ZVersionIndexEntry* z_version_index_find_by_version(ZVersionIndex* idx, ZapVersi
         ZStringView entry_branch = z_strbuf_view(&entry->branch);
         ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
 
-        ZRefKind entry_ref_kind = (entry->ref_kind == Z_REF_LATEST) ? Z_REF_LATEST : Z_REF_REVSPEC;
+        ZRefKind entry_ref_kind = entry->ref_kind;
+        if (entry_ref_kind != Z_REF_LATEST && entry_ref_kind != Z_REF_STABLE) {
+            entry_ref_kind = Z_REF_REVSPEC;
+        }
 
         bool ref_equal = false;
         if (entry_ref_kind == version.ref_kind) {
@@ -115,7 +121,10 @@ bool z_version_index_remove_by_version(ZVersionIndex* idx, ZapVersion version) {
         ZStringView entry_branch = z_strbuf_view(&entry->branch);
         ZStringView entry_revspec = entry->revspec.len == 0 ? z_sv_from_data_and_len("", 0) : z_strbuf_view(&entry->revspec);
 
-        ZRefKind entry_ref_kind = (entry->ref_kind == Z_REF_LATEST) ? Z_REF_LATEST : Z_REF_REVSPEC;
+        ZRefKind entry_ref_kind = entry->ref_kind;
+        if (entry_ref_kind != Z_REF_LATEST && entry_ref_kind != Z_REF_STABLE) {
+            entry_ref_kind = Z_REF_REVSPEC;
+        }
 
         bool ref_equal = false;
         if (entry_ref_kind == version.ref_kind) {
@@ -192,6 +201,9 @@ void z_version_index_from_json(ZVersionIndex* idx, ZStringView json) {
                 if (rt && strcmp(rt, "latest") == 0) {
                     ver.ref_kind = Z_REF_LATEST;
                     ver.revspec = Z_SV_NULL;
+                } else if (rt && strcmp(rt, "stable") == 0) {
+                    ver.ref_kind = Z_REF_STABLE;
+                    ver.revspec = Z_SV_NULL;
                 } else {
                     ver.ref_kind = Z_REF_REVSPEC;
                     ver.revspec = revspec_sv;
@@ -218,10 +230,10 @@ bool z_version_index_to_json(ZVersionIndex* idx, ZStringBuf* out) {
         yyjson_mut_obj_add_strn(doc, obj, "branch", entry->branch.data, entry->branch.len);
 
         bool is_latest = (entry->ref_kind == Z_REF_LATEST);
+        bool is_stable = (entry->ref_kind == Z_REF_STABLE);
+        yyjson_mut_obj_add_str(doc, obj, "ref_type", is_latest ? "latest" : (is_stable ? "stable" : "revspec"));
 
-        yyjson_mut_obj_add_str(doc, obj, "ref_type", is_latest ? "latest" : "revspec");
-
-        if (!is_latest) {
+        if (!is_latest && !is_stable) {
             yyjson_mut_obj_add_strn(doc, obj, "revspec", entry->revspec.data, entry->revspec.len);
         }
 

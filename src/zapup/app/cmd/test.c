@@ -2,39 +2,11 @@
 #include <zapup/app/helpers.h>
 
 #include <zapup/output.h>
-#include <zapup/zap/test.h>
 
 int zapup_test_single_entry(ZapupApp* app, const ZCliTestArgs* args, ZVersionIndexEntry* entry) {
     (void) app, (void) args; // unused for now
-    ZapVersion ver = {
-        .branch = entry->branch.len == 0 ? Z_SV_NULL : z_strbuf_view(&entry->branch),
-        .revspec = z_strbuf_view(&entry->revspec),
-        .build = entry->build,
-    };
-
-    ZStringBuf version_formatted_buf;
-    z_strbuf_init(&version_formatted_buf);
-    z_format_zap_version(ver, &version_formatted_buf);
-
-    ZStringView version_formatted = z_strbuf_view(&version_formatted_buf);
-
-    z_show_info("Testing " Z_SV_FMT, Z_SV_FARG(version_formatted));
-
-    bool all_tests_passed;
-    if (!z_run_zap_tests(ver, z_strbuf_view(&entry->path), &all_tests_passed)) {
-        z_show_error("Failed to run tests for " Z_SV_FMT, Z_SV_FARG(version_formatted));
-        z_strbuf_destroy(&version_formatted_buf);
-        return 1;
-    } else {
-        if (all_tests_passed) {
-            z_show_info("All tests passed for version " Z_SV_FMT, Z_SV_FARG(version_formatted));
-            z_strbuf_destroy(&version_formatted_buf);
-        } else {
-            z_show_error("Some tests failed for version " Z_SV_FMT, Z_SV_FARG(version_formatted));
-        }
-    }
-
-    return 0;
+    ZapVersion ver = z_version_index_entry_version(entry);
+    return zapup_test_version_at_path(ver, z_strbuf_view(&entry->path));
 }
 
 int zapup_exec_test(ZapupApp* app) {

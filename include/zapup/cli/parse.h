@@ -1,29 +1,6 @@
 #pragma once
 
 #include <zapup/cli/args.h>
-
-typedef enum ZCliParseErrorCode {
-    Z_CLI_PARSE_OK,
-    Z_CLI_PARSE_UNKNOWN_LONG_FLAG,
-    Z_CLI_PARSE_UNKNOWN_SHORT_FLAG,
-    Z_CLI_PARSE_UNKNOWN_COMMAND,
-    Z_CLI_PARSE_UNEXPECTED_ARG,
-    Z_CLI_PARSE_EXPECTED_ARG,
-    Z_CLI_PARSE_WRONG_ARG_FORMAT,
-    Z_CLI_PARSE_COMMAND_EXPECTED,
-    Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
-
-    _Z_CLI_PARSE_STOP, // internal
-} ZCliParseErrorCode;
-
-typedef struct ZCliParseResult {
-    ZCliParseErrorCode code;
-    union {
-        ZStringView str;
-        char c;
-    } ctx;
-} ZCliParseResult;
-
-#define Z_CLI_PARSE_RESULT_OK ((ZCliParseResult) { .code = Z_CLI_PARSE_OK })
+#include <zapup/cli/result.h>
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out);

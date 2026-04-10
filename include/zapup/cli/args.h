@@ -24,6 +24,7 @@ typedef struct ZCliBuildArgs {
 typedef struct ZCliInstallArgs {
     ZapVersion version;
     ZCliBuildArgs build;
+    bool test;
 } ZCliInstallArgs;
 
 typedef struct ZCliUninstallArgs {
