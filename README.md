@@ -18,6 +18,11 @@ This script will:
 * build the project
 * install it using `sudo make install`
 
+> [!WARNING]
+> This command downloads and executes a remote script.
+> You can inspect it here before running:
+> https://github.com/Maqi-x/zapup/blob/main/quick-install.sh
+
 ---
 
 ### Manual installation
