@@ -2,14 +2,14 @@
 #include <zapup/app/cmds.h>
 #include <zapup/app/helpers.h>
 
+#include <zapup/index.h>
+#include <zapup/storage.h>
+
 #include <zapup/cli/args.h>
 #include <zapup/cli/parse.h>
 
-#include <zapup/zap/clone.h>
-#include <zapup/zap/build.h>
 #include <zapup/output.h>
-
-#include <util/fs.h>
+#include <zapup/help.h>
 
 #include <git2.h>
 
@@ -28,6 +28,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
     ZCliParseResult err = z_cli_parse_args(argc, argv, &app->args);
     if (err.code != Z_CLI_PARSE_OK) {
         z_parse_result_print(&err, Z_OUTPUT_ERROR);
+        ZHelpInfo info = zapup_get_help();
+        zapup_show_help(&info, app->args.cmd, stderr);
         return 1;
     }
 
