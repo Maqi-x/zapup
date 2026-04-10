@@ -6,6 +6,7 @@ int zapup_exec_reshim(ZapupApp* app);
 int zapup_exec_switch(ZapupApp* app);
 int zapup_exec_which(ZapupApp* app);
 int zapup_exec_list(ZapupApp* app);
+int zapup_exec_show(ZapupApp* app);
 int zapup_exec_test(ZapupApp* app);
 int zapup_exec_sync(ZapupApp* app);
 int zapup_exec_help(ZapupApp* app);
