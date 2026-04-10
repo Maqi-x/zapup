@@ -31,3 +31,4 @@ bool z_file_exists(ZPathView path);
 ZFileType z_get_file_type(ZPathView path);
 
 bool z_set_executable(ZPathView path, bool enabled);
+bool z_get_self_executable(ZPathBuf* out_path);

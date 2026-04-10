@@ -179,6 +179,7 @@ bool z_touch(ZPathView path) {
     if (!cpath) return false;
 
     HANDLE hFile = CreateFileA(cpath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    free(cpath);
     if (hFile == INVALID_HANDLE_VALUE) {
         if (GetLastError() == ERROR_FILE_NOT_FOUND) {
             hFile = CreateFileA(cpath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -192,9 +193,9 @@ bool z_touch(ZPathView path) {
 
     FILETIME ft;
     GetSystemTimeAsFileTime(&ft);
-    
+
     BOOL res = SetFileTime(hFile, NULL, &ft, &ft);
-    
+
     CloseHandle(hFile);
     free(cpath);
     return res != 0;
@@ -327,6 +328,56 @@ bool z_set_executable(ZPathView path, bool enabled) {
     (void)enabled;
     // On Windows, execution depends on file extension, not file attributes.
     return true;
+}
+
+bool z_get_self_executable(ZPathBuf* out) {
+    if (!out) return false;
+
+    DWORD buf_len = MAX_PATH;
+    char stack_buf[MAX_PATH];
+    DWORD res = GetModuleFileNameA(NULL, stack_buf, buf_len);
+    if (res == 0) {
+        return false;
+    }
+
+    if (res < buf_len && stack_buf[res] == '\0') {
+        z_strbuf_clear(out);
+        if (!z_strbuf_append(out, z_sv_from_cstr(stack_buf))) {
+            return false;
+        }
+        ZPathBuf abs_buf;
+        if (!z_pathbuf_init_from(&abs_buf, z_pathbuf_as_view(out))) {
+            return true;
+        }
+        bool ok = z_path_abs(z_pathbuf_as_view(&abs_buf), out);
+        z_pathbuf_destroy(&abs_buf);
+        return ok;
+    }
+
+    DWORD needed = res + 1;
+    char* heap_buf = (char*)malloc(needed);
+    if (!heap_buf) {
+        return false;
+    }
+
+    DWORD res2 = GetModuleFileNameA(NULL, heap_buf, needed);
+    if (res2 == 0 || res2 >= needed) {
+        free(heap_buf);
+        return false;
+    }
+
+    z_strbuf_clear(out);
+    bool append_ok = z_strbuf_append(out, z_sv_from_cstr(heap_buf));
+    free(heap_buf);
+    if (!append_ok) return false;
+
+    ZPathBuf abs_buf2;
+    if (!z_pathbuf_init_from(&abs_buf2, z_pathbuf_as_view(out))) {
+        return true;
+    }
+    bool ok2 = z_path_abs(z_pathbuf_as_view(&abs_buf2), out);
+    z_pathbuf_destroy(&abs_buf2);
+    return ok2;
 }
 
 #endif // Z_PLATFORM_IS_WINDOWS
