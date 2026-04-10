@@ -1,8 +1,8 @@
 #include <zapup/zap/clone.h>
+#include <zapup/zap/stable.h>
 
 #include <git2.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <string.h>
 
 #define Z_ZAP_REPO_URL "https://github.com/thezaplang/zap.git"
@@ -47,8 +47,6 @@ int z_clone_zap_repo_with_version_progress(
     char* path_cstr = z_sv_to_cstr_alloc(path);
     char* branch_cstr = NULL;
     char* revspec_cstr = NULL;
-    char* chosen_tag = NULL;
-    git_strarray tag_names = {0};
     git_object* commit_obj = NULL;
     git_repository* repo = NULL;
 
@@ -98,67 +96,18 @@ int z_clone_zap_repo_with_version_progress(
         error = git_repository_set_head_detached(repo, git_object_id(commit_obj));
         if (error != 0) goto cleanup;
     } else if (ver.ref_kind == Z_REF_STABLE) {
-        int terr = git_tag_list(&tag_names, repo);
-        if (terr != 0) {
-            error = terr;
-            goto cleanup;
-        }
-
-        long long best_time = LLONG_MIN;
-        const char* best_name = NULL;
-
-        for (size_t ti = 0; ti < tag_names.count; ++ti) {
-            const char* tname = tag_names.strings[ti];
-            git_object* obj2 = NULL;
-            if (git_revparse_single(&obj2, repo, tname) != 0) {
-                giterr_clear();
-                continue;
-            }
-
-            git_object_t type = git_object_type(obj2);
-            long long t = LLONG_MIN;
-
-            if (type == GIT_OBJECT_TAG) {
-                git_tag* tag = (git_tag*)obj2;
-                const git_signature* tagger = git_tag_tagger(tag);
-                if (tagger) {
-                    t = tagger->when.time;
-                } else {
-                    git_object* target = NULL;
-                    if (git_tag_target(&target, tag) == 0) {
-                        if (git_object_type(target) == GIT_OBJECT_COMMIT) {
-                            t = git_commit_time((git_commit*)target);
-                        }
-                        git_object_free(target);
-                    }
-                }
-            } else if (type == GIT_OBJECT_COMMIT) {
-                t = git_commit_time((git_commit*)obj2);
-            }
-
-            git_object_free(obj2);
-
-            if (t > best_time) {
-                best_time = t;
-                best_name = tname;
-            }
-        }
-
-        if (!best_name) {
+        git_oid stable_oid;
+        int serr = z_stable_resolve_best_tag_commit(repo, &stable_oid);
+        if (serr == 1) {
             error = -1;
             goto cleanup;
         }
-
-        size_t l = strlen(best_name) + 1;
-        chosen_tag = malloc(l);
-        if (!chosen_tag) {
-            error = -1;
+        if (serr != 0) {
+            error = serr;
             goto cleanup;
         }
-        memcpy(chosen_tag, best_name, l);
-        revspec_cstr = chosen_tag;
 
-        error = git_revparse_single(&commit_obj, repo, revspec_cstr);
+        error = git_object_lookup(&commit_obj, repo, &stable_oid, GIT_OBJECT_COMMIT);
         if (error != 0) goto cleanup;
 
         git_checkout_options checkout_opts;
@@ -180,7 +129,6 @@ int z_clone_zap_repo_with_version_progress(
 cleanup:
     if (repo) git_repository_free(repo);
     git_object_free(commit_obj);
-    if (tag_names.count) git_strarray_dispose(&tag_names);
     free(revspec_cstr);
     free(branch_cstr);
     free(path_cstr);
