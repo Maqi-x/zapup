@@ -1,4 +1,5 @@
 #include <util/pathview.h>
+#include <ctype.h>
 
 ZPathView z_pathview_dirname(ZPathView pv) {
     if (pv.len == 0) return pv;
