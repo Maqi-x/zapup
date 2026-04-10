@@ -25,13 +25,10 @@ static bool should_use_color(FILE* stream) {
     return isatty(fileno(stream));
 }
 
-void z_output_valist(ZOutputType type, const char* fmt, va_list args) {
+static void z_output_meta(ZOutputType type, FILE** out_stream, const char** out_prefix, const char** out_color) {
     FILE* stream = stdout;
     const char* prefix = "";
     const char* color = "";
-    const char* reset = "\033[0m";
-
-    bool use_color = false;
 
     switch (type) {
     case Z_OUTPUT_ERROR:
@@ -56,13 +53,28 @@ void z_output_valist(ZOutputType type, const char* fmt, va_list args) {
         break;
     }
 
-    use_color = should_use_color(stream);
+    *out_stream = stream;
+    *out_prefix = prefix;
+    *out_color = color;
+}
 
-    if (use_color) {
+static void z_output_write_prefix(FILE* stream, const char* prefix, const char* color) {
+    const char* reset = "\033[0m";
+    bool use_color = should_use_color(stream);
+
+    if (use_color && color[0] != '\0') {
         fprintf(stream, "%s%s%s", color, prefix, reset);
     } else {
         fprintf(stream, "%s", prefix);
     }
+}
+
+void z_output_valist(ZOutputType type, const char* fmt, va_list args) {
+    FILE* stream = stdout;
+    const char* prefix = "";
+    const char* color = "";
+    z_output_meta(type, &stream, &prefix, &color);
+    z_output_write_prefix(stream, prefix, color);
 
     vfprintf(stream, fmt, args);
     fprintf(stream, "\n");
@@ -73,4 +85,28 @@ void z_output(ZOutputType type, const char* fmt, ...) {
     va_start(args, fmt);
     z_output_valist(type, fmt, args);
     va_end(args);
+}
+
+void z_output_inline_valist(ZOutputType type, const char* fmt, va_list args) {
+    FILE* stream = stdout;
+    const char* prefix = "";
+    const char* color = "";
+    z_output_meta(type, &stream, &prefix, &color);
+    fprintf(stream, "\r");
+    z_output_write_prefix(stream, prefix, color);
+    vfprintf(stream, fmt, args);
+    fflush(stream);
+}
+
+void z_output_inline(ZOutputType type, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    z_output_inline_valist(type, fmt, args);
+    va_end(args);
+}
+
+void z_output_inline_finish(ZOutputType type) {
+    FILE* stream = (type == Z_OUTPUT_ERROR || type == Z_OUTPUT_WARN) ? stderr : stdout;
+    fprintf(stream, "\n");
+    fflush(stream);
 }

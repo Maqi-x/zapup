@@ -7,6 +7,25 @@
 
 #include <util/fs.h>
 
+#include <stdbool.h>
+
+typedef struct InstallCloneProgressState {
+    int last_percent;
+    bool printed;
+} InstallCloneProgressState;
+
+static void zapup_install_clone_progress(const ZapCloneProgress* progress, void* user_data) {
+    if (!progress || !user_data) return;
+
+    InstallCloneProgressState* state = (InstallCloneProgressState*)user_data;
+    if (progress->percent < 0 || progress->percent > 100) return;
+    if (progress->percent == state->last_percent) return;
+
+    z_show_info_inline("cloning repo: %3d%%...", progress->percent);
+    state->last_percent = progress->percent;
+    state->printed = true;
+}
+
 int zapup_exec_install(ZapupApp* app) {
     int res = zapup_ensure_index_lock(app);
     if (res != 0) return res;
@@ -21,7 +40,17 @@ int zapup_exec_install(ZapupApp* app) {
 
     z_show_info("installing to " Z_SV_FMT "...", Z_SV_FARG(out_path));
 
-    res = z_clone_zap_repo_with_version(v, z_pathbuf_as_view(&out_path), NULL);
+    InstallCloneProgressState clone_progress = {
+        .last_percent = -1,
+        .printed = false,
+    };
+    res = z_clone_zap_repo_with_version_progress(
+        v, z_pathbuf_as_view(&out_path), NULL,
+        zapup_install_clone_progress, &clone_progress
+    );
+    if (clone_progress.printed) {
+        z_show_info_inline_finish();
+    }
     if (res != 0) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
