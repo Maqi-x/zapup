@@ -54,6 +54,7 @@ int zapup_exec_install(ZapupApp* app) {
     if (res != 0) {
         const git_error* err = git_error_last();
         z_show_error("%s", err->message);
+        z_rm_recursive(z_strbuf_view(&out_path));
         z_pathbuf_destroy(&out_path);
         z_lockfile_unlock(&app->indexlock);
         return 1;
