@@ -1,6 +1,6 @@
 #include <zapup/shims.h>
 
-bool z_sh_generate_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf* out) {
+bool z_generate_sh_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf* out) {
     ZStringView tool_string = z_format_zap_toolchain_element(tool);
 
     if (!z_strbuf_appendf(out, "#!/bin/sh\n")) return false;
@@ -12,9 +12,19 @@ bool z_sh_generate_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf
     return true;
 }
 
-bool z_batch_generate_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf* out) {
+bool z_generate_batch_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf* out) {
     (void) self, (void) tool, (void) out;
     // TODO
     return false;
 }
 
+bool z_generate_native_shim_for(ZPathView self, ZapToolchainElement tool, ZStringBuf* out) {
+#if Z_PLATFORM_IS_WINDOWS
+    return z_generate_batch_shim_for(self, tool, out);
+#elif Z_PLATFORM_IS_POSIX
+    return z_generate_sh_shim_for(self, tool, out);
+#else
+    (void) self, (void) tool, (void) out;
+    return false;
+#endif
+}
