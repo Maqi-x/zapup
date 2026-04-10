@@ -19,25 +19,30 @@ int zapup_reshim_single(ZapupApp* app, ZapToolchainElement tool, ZStringView sel
 
     z_show_info("Generating shim for " Z_SV_FMT "...", Z_SV_FARG(name));
 
-    bool result = z_generate_native_shim_for(self_bin, tool, &shim_buf);
-    if (!result) {
+    int result = 0;
+
+    bool ok = z_generate_native_shim_for(self_bin, tool, &shim_buf);
+    if (!ok) {
         z_show_error("Failed to generate shim");
-        return 1;
+        result = 1; goto cleanup;
     }
 
-    result = z_write_file(z_pathbuf_as_view(&path), z_strbuf_view(&shim_buf));
-    if (!result) {
+    ok = z_write_file(z_pathbuf_as_view(&path), z_strbuf_view(&shim_buf));
+    if (!ok) {
         z_show_error("Failed to save shim to file");
-        return 1;
+        result = 1; goto cleanup;
     }
 
-    result = z_set_executable(z_pathbuf_as_view(&path), true);
-    if (!result) {
+    ok = z_set_executable(z_pathbuf_as_view(&path), true);
+    if (!ok) {
         z_show_error("Failed to make shim executable");
-        return 1;
+        result = 1; goto cleanup;
     }
 
-    return 0;
+cleanup:
+    z_pathbuf_destroy(&path);
+    z_strbuf_destroy(&shim_buf);
+    return result;
 }
 
 int zapup_exec_reshim(ZapupApp* app) {
