@@ -34,6 +34,14 @@ int zapup_exec_install(ZapupApp* app) {
             app, &args->build, z_strbuf_view(&out_path), v
         );
         z_cmake_build_zap(&opts);
+        if (args->test) {
+            res = zapup_test_version_at_path(v, z_strbuf_view(&out_path));
+            if (res != 0) {
+                z_lockfile_unlock(&app->indexlock);
+                z_pathbuf_destroy(&out_path);
+                return res;
+            }
+        }
 
         z_lockfile_unlock(&app->indexlock);
         z_pathbuf_destroy(&out_path);
