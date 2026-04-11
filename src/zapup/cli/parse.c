@@ -178,13 +178,15 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
             ZStringView val = z_sv_trim_prefix(flag, Z_SV("parallel="));
             return z_cli_parse_jobs(val, &build->max_jobs);
         }
+        if (z_sv_eql(flag, Z_SV("test"))) {
+            build->run_tests = true;
+            return Z_CLI_PARSE_RESULT_OK;
+        }
     }
 
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
-        if (z_sv_eql(flag, Z_SV("test"))) {
-            out->cmd_args.install.test = true;
-        } else if (z_sv_eql(flag, Z_SV("switch")) || z_sv_eql(flag, Z_SV("select"))) {
+        if (z_sv_eql(flag, Z_SV("switch")) || z_sv_eql(flag, Z_SV("select"))) {
             out->cmd_args.install.switch_ = true;
         } else {
             return z_cli_unknown_long_flag(flag);
@@ -210,21 +212,24 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
 ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArgs* out) {
     char flag = flags.data[*i];
     ZCliBuildArgs* build = z_cli_get_build_args(out);
-    if (build && flag == 'j') {
-        build->parallel = true;
-        ZStringView val = z_sv_slice(flags, *i + 1, flags.len);
-        ZCliParseResult res = z_cli_parse_jobs(val, &build->max_jobs);
-        if (res.code == Z_CLI_PARSE_OK) {
-            *i = flags.len;
+    if (build) {
+        if (flag == 'j') {
+            build->parallel = true;
+            ZStringView val = z_sv_slice(flags, *i + 1, flags.len);
+            ZCliParseResult res = z_cli_parse_jobs(val, &build->max_jobs);
+            if (res.code == Z_CLI_PARSE_OK) {
+                *i = flags.len;
+            }
+            return res;
+        } else if (flag == 't') {
+            build->run_tests = true;
+            return Z_CLI_PARSE_RESULT_OK;
         }
-        return res;
     }
 
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
-        if (flag == 't') {
-            out->cmd_args.install.test = true;
-        } else if (flag == 's') {
+        if (flag == 's') {
             out->cmd_args.install.switch_ = true;
         } else {
             return z_cli_unknown_short_flag(flag);

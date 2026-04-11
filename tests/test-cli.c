@@ -43,7 +43,7 @@ void test_parse_install_flags() {
     TEST_ASSERT_EQUAL_INT(Z_REF_LATEST, args.cmd_args.install.version.ref_kind);
     TEST_ASSERT_TRUE(args.cmd_args.install.build.parallel);
     TEST_ASSERT_EQUAL_INT(4, args.cmd_args.install.build.max_jobs);
-    TEST_ASSERT_TRUE(args.cmd_args.install.test);
+    TEST_ASSERT_TRUE(args.cmd_args.install.build.run_tests);
 }
 
 void test_parse_uninstall() {

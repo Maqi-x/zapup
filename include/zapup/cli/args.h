@@ -20,13 +20,13 @@ typedef enum ZCliCommand {
 typedef struct ZCliBuildArgs {
     bool parallel;
     int max_jobs; // 0 means no limit if parallel is true
+    bool run_tests;
 } ZCliBuildArgs;
 
 typedef struct ZCliInstallArgs {
     ZapVersion version;
     ZCliBuildArgs build;
     bool switch_;
-    bool test;
 } ZCliInstallArgs;
 
 typedef struct ZCliUninstallArgs {
