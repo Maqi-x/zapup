@@ -423,33 +423,42 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return (ERR);                       \
     }
 
+ZCliParseResult z_cli_process_token(ZStringView arg, bool* stop_parsing_flags, ZCliArgs* out) {
+    if (*stop_parsing_flags) {
+        return z_cli_handle_arg(arg, out);
+    }
+
+    if (z_sv_eql(arg, Z_SV("--"))) {
+        *stop_parsing_flags = true;
+        return Z_CLI_PARSE_RESULT_OK;
+    }
+
+    if (z_cli_is_long_flag(arg)) {
+        ZStringView flag = z_sv_trim_prefix(arg, Z_SV("--"));
+        return z_cli_handle_long_flag(flag, out);
+    }
+
+    if (z_cli_is_short_flag(arg)) {
+        ZStringView flags = z_sv_trim_prefix(arg, Z_SV("-"));
+        for (usize j = 0; j < flags.len; ++j) {
+            ZCliParseResult err = z_cli_handle_short_flag(flags, &j, out);
+            Z_CLI_HANDLE_ERR(err);
+        }
+    }
+
+    return z_cli_handle_arg(arg, out);
+}
+
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
     z_cli_apply_defaults(out);
     bool stop_parsing_flags = false;
     for (usize i = 1; i < (usize) argc; ++i) {
         ZCliCommand cmd_old = out->cmd;
         ZStringView arg = z_sv_from_cstr(argv[i]);
-        if (stop_parsing_flags) {
-            ZCliParseResult err = z_cli_handle_arg(arg, out);
-            Z_CLI_HANDLE_ERR(err);
-        } else if (z_sv_eql(arg, Z_SV("--"))) {
-            stop_parsing_flags = true;
-        } else if (z_cli_is_long_flag(arg)) {
-            ZStringView flag = z_sv_trim_prefix(arg, Z_SV("--"));
-            ZCliParseResult err = z_cli_handle_long_flag(flag, out);
-            Z_CLI_HANDLE_ERR(err);
-        } else if (z_cli_is_short_flag(arg)) {
-            ZStringView flags = z_sv_trim_prefix(arg, Z_SV("-"));
-            for (usize j = 0; j < flags.len; ++j) {
-                ZCliParseResult err = z_cli_handle_short_flag(flags, &j, out);
-                Z_CLI_HANDLE_ERR(err);
-            }
-        } else {
-            ZCliParseResult err = z_cli_handle_arg(arg, out);
-            Z_CLI_HANDLE_ERR(err);
-        }
 
-        if (out->cmd != cmd_old) {
+        ZCliParseResult err = z_cli_process_token(arg, &stop_parsing_flags, out);
+
+        Z_CLI_HANDLE_ERR(err);        if (out->cmd != cmd_old) {
             z_cli_apply_command_defaults(out->cmd, out);
         }
     }
