@@ -220,7 +220,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
 
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
-        if (flag == 'h') {
+        if (flag == 't') {
             out->cmd_args.install.test = true;
         } else {
             return z_cli_unknown_short_flag(flag);
