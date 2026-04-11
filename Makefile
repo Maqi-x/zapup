@@ -53,20 +53,18 @@ WARNINGS   := -Wall -Wextra
 
 COMMON_CFLAGS := $(CSTD) $(WARNINGS) -I$(INCLUDE_DIR)
 
-ifeq ($(PLATFORM),windows)
 -include external/yyjson.mk
 -include external/libgit2.mk
-endif
 
 ifeq ($(BUILD),debug)
 	CFLAGS := $(COMMON_CFLAGS) -Og -g
-	LDFLAGS :=
+	LDFLAGS +=
 else ifeq ($(BUILD),asan)
 	CFLAGS := $(COMMON_CFLAGS) -Og -g -fsanitize=address,undefined
-	LDFLAGS := -fsanitize=address,undefined
+	LDFLAGS += -fsanitize=address,undefined
 else ifeq ($(BUILD),release)
 	CFLAGS := $(COMMON_CFLAGS) -O3 -DNDEBUG -DZAPUP_RELEASE
-	LDFLAGS :=
+	LDFLAGS +=
 else
 	$(error Unknown BUILD=$(BUILD))
 endif
@@ -85,11 +83,6 @@ DEPS := $(patsubst %.c,$(DEP_ROOT_DIR)/%.d,$(ALL_C_SRCS))
 
 all: dirs $(TARGET)
 
-# i dont fucking know why, but it works
-ifeq ($(PLATFORM),posix)
--include external/yyjson.mk
--include external/libgit2.mk
-endif
 -include tests/build.mk
 
 submodules:
