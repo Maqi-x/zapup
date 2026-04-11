@@ -1,5 +1,6 @@
 #include <zapup/app/app.h>
 #include <zapup/app/helpers.h>
+#include <zapup/app/switch.h>
 
 #include <zapup/zap/clone.h>
 #include <zapup/zap/build.h>
@@ -63,9 +64,24 @@ int zapup_exec_install(ZapupApp* app) {
         const ZapBuildOptions opts = zapup_cli_build_args_to_opts(
             app, &args->build, z_strbuf_view(&out_path), v
         );
-        z_cmake_build_zap(&opts);
+        ZapBuildResult result = z_cmake_build_zap(&opts);
+        if (result.code != Z_ZAP_BUILD_SUCCESS) {
+            // TODO
+            z_rm_recursive(z_strbuf_view(&out_path));
+            return 1;
+        }
+
         if (args->test) {
             res = zapup_test_version_at_path(v, z_strbuf_view(&out_path));
+            if (res != 0) {
+                z_lockfile_unlock(&app->indexlock);
+                z_pathbuf_destroy(&out_path);
+                return res;
+            }
+        }
+
+        if (args->switch_) {
+            res = zapup_switch_to_version(app, v);
             if (res != 0) {
                 z_lockfile_unlock(&app->indexlock);
                 z_pathbuf_destroy(&out_path);
