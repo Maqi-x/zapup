@@ -2,6 +2,8 @@ CC ?= cc
 AR ?= ar
 BUILD ?= release
 
+.DEFAULT_GOAL := all
+
 ifeq ($(OS),Windows_NT)
 	PLATFORM := windows
 else
