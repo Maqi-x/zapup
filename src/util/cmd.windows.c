@@ -58,28 +58,6 @@ static char* z_cmd_build_command_line(const ZStringViewArray* argv) {
     return cmd_line;
 }
 
-static char* z_cmd_build_env_block(const ZStringViewArray* envp) {
-    if (envp->count == 0) return NULL;
-
-    usize total_len = 0;
-    for (usize i = 0; i < envp->count; i++) {
-        total_len += envp->data[i].len + 1;
-    }
-    total_len += 1; // Final null terminator
-
-    char* env_block = malloc(total_len);
-    if (!env_block) return NULL;
-
-    char* ptr = env_block;
-    for (usize i = 0; i < envp->count; i++) {
-        memcpy(ptr, envp->data[i].data, envp->data[i].len);
-        ptr += envp->data[i].len;
-        *ptr++ = '\0';
-    }
-    *ptr = '\0';
-    return env_block;
-}
-
 static void z_cmd_capture_output(const ZCommand* cmd, ZWinPipes* pipes) {
     if (pipes->stdout_write) CloseHandle(pipes->stdout_write);
     if (pipes->stderr_write) CloseHandle(pipes->stderr_write);
@@ -129,7 +107,6 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
     if (!z_cmd_setup_pipes(cmd, &pipes, &si)) return result;
 
     char* cmd_line = z_cmd_build_command_line(&cmd->argv);
-    char* env_block = z_cmd_build_env_block(&cmd->envp);
     char* cwd_cstr = z_sv_to_cstr_alloc(cmd->cwd);
 
     if (!cmd_line || (!z_sv_is_null(cmd->cwd) && !cwd_cstr)) {
@@ -137,7 +114,7 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
         goto cleanup;
     }
 
-    if (CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, env_block, cwd_cstr, &si, &pi)) {
+    if (CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, NULL, cwd_cstr, &si, &pi)) {
         z_cmd_capture_output(cmd, &pipes);
         WaitForSingleObject(pi.hProcess, INFINITE);
         DWORD exit_code;
@@ -159,7 +136,6 @@ ZCmdRunResult z_cmd_run(const ZCommand* cmd) {
 
 cleanup:
     free(cmd_line);
-    free(env_block);
     free(cwd_cstr);
     if (pipes.stdout_read) CloseHandle(pipes.stdout_read);
     if (pipes.stderr_read) CloseHandle(pipes.stderr_read);
