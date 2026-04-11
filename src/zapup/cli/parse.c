@@ -444,6 +444,7 @@ ZCliParseResult z_cli_process_token(ZStringView arg, bool* stop_parsing_flags, Z
             ZCliParseResult err = z_cli_handle_short_flag(flags, &j, out);
             Z_CLI_HANDLE_ERR(err);
         }
+        return Z_CLI_PARSE_RESULT_OK;
     }
 
     return z_cli_handle_arg(arg, out);

@@ -35,7 +35,7 @@ void test_parse_install() {
 }
 
 void test_parse_install_flags() {
-    const char* argv[] = { "zapup", "install", "latest", "--parallel=4", "--test" };
+    const char* argv[] = { "zapup", "install", "latest", "-j4", "--test" };
     ZCliArgs args;
     ASSERT_PARSE_OK(Z_ARRAY_LEN(argv), argv, &args);
     
