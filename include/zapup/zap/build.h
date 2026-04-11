@@ -8,6 +8,7 @@ typedef enum ZapBuildErrorCode {
     Z_ZAP_BUILD_FS_ERROR,
     Z_ZAP_BUILD_CONFIGURE_ERR,
     Z_ZAP_BUILD_COMPILATION_ERR,
+    Z_ZAP_BUILD_TESTS_ERR,
 } ZapBuildErrorCode;
 
 typedef struct ZapBuildResult {
@@ -19,6 +20,7 @@ typedef struct ZapBuildOptions {
     ZapVersion ver;
     bool parallel;
     int max_jobs;
+    bool run_tests;
     ZStringView cc;
     ZStringView cxx;
 } ZapBuildOptions;

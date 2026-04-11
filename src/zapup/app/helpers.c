@@ -66,6 +66,7 @@ ZapBuildOptions zapup_cli_build_args_to_opts(
         .ver = ver,
         .parallel = args->parallel,
         .max_jobs = args->max_jobs,
+        .run_tests = args->run_tests,
         .cc = app->cfg.build.cc,
         .cxx = app->cfg.build.cxx,
     };

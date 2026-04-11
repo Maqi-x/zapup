@@ -1,4 +1,5 @@
 #include <zapup/zap/build.h>
+#include <zapup/zap/test.h>
 
 #include <util/strconv.h>
 #include <util/cmd.h>
@@ -89,6 +90,11 @@ ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
 
     if (z_cmd_run(&compile_cmd).status != Z_CMD_OK) {
         final_res.code = Z_ZAP_BUILD_COMPILATION_ERR;
+        goto cleanup;
+    }
+
+    if (!z_run_zap_tests(opts->ver, opts->zap_root, NULL)) {
+        final_res.code = Z_ZAP_BUILD_TESTS_ERR;
         goto cleanup;
     }
 

@@ -71,15 +71,6 @@ int zapup_exec_install(ZapupApp* app) {
             return 1;
         }
 
-        if (args->build.run_tests) {
-            res = zapup_test_version_at_path(v, z_strbuf_view(&out_path));
-            if (res != 0) {
-                z_lockfile_unlock(&app->indexlock);
-                z_pathbuf_destroy(&out_path);
-                return res;
-            }
-        }
-
         if (args->switch_) {
             res = zapup_switch_to_version(app, v);
             if (res != 0) {
