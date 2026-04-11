@@ -8,7 +8,7 @@ ZapUp is a command-line version manager for the Zap Programming Language. It all
 Run the following command:
 
 ```sh
-sh -c "$(curl -sS https://raw.githubusercontent.com/Maqi-x/zapup/refs/heads/main/quick-install.sh)"
+sh -c "$(curl -sS https://raw.githubusercontent.com/thezaplang/zapup/refs/heads/main/quick-install.sh)"
 ```
 
 This script will:
@@ -21,7 +21,7 @@ This script will:
 > [!WARNING]
 > This command downloads and executes a remote script.
 > You can inspect it here before running:
-> https://github.com/Maqi-x/zapup/blob/main/quick-install.sh
+> https://github.com/thezaplang/zapup/blob/main/quick-install.sh
 
 ---
 
@@ -44,7 +44,7 @@ paru -S zapup
 
 Clone the zapup repo:
 ```sh
-git clone https://github.com/Maqi-x/zapup.git
+git clone https://github.com/thezaplang/zapup.git
 cd zapup
 ```
 
@@ -71,4 +71,4 @@ Run `zapup help` for usage information.
 ---
 
 ## License
-This project is licensed under the **GNU GPL v3 License** - see the [LICENSE](https://github.com/Maqi-x/ZapUp/blob/main/LICENSE) file for details or obtain a copy [here](https://www.gnu.org/licenses/gpl-3.0.en.html).
+This project is licensed under the **GNU GPL v3 License** - see the [LICENSE](https://github.com/thezaplang/ZapUp/blob/main/LICENSE) file for details or obtain a copy [here](https://www.gnu.org/licenses/gpl-3.0.en.html).
