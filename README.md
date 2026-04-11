@@ -62,7 +62,7 @@ make submodules
 
 Build the project:
 ```sh
-make -j
+make -j$(nproc)
 ```
 
 Install (optional):
