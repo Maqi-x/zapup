@@ -8,7 +8,7 @@ static ZHelpFlag help_global_flags[] = {
 };
 
 static ZHelpFlag help_build_flags[] = {
-    { Z_SV("-j[N], --parallel[=N]"),   Z_SV("Enable parallel building with N jobs") },
+    { Z_SV("--parallel[=N], -j[N]"),   Z_SV("Enable parallel building with N jobs") },
     { Z_SV("--test, --run-tests, -t"), Z_SV("Run tests after instalation") },
 };
 
