@@ -15,6 +15,10 @@ static usize z_help_max_len(const ZHelpFlag* flags, usize count) {
     return max_len;
 }
 
+static bool z_cli_cmd_has_build_flags(ZCliCommand cmd) {
+    return cmd == Z_CLI_CMD_INSTALL || cmd == Z_CLI_CMD_SYNC;
+}
+
 static void z_cli_print_usage_entries(ZHelpUsage usage, FILE* out) {
     if (usage.entries == NULL || usage.count == 0) {
         return;
@@ -89,12 +93,10 @@ void z_cli_print_help(const ZHelpInfo* info, FILE* out) {
     }
 }
 
-void z_cli_print_help_flags(const ZHelpFlag* flags, usize count, FILE* out) {
+static void z_cli_print_help_flags_with_max_len(const ZHelpFlag* flags, usize count, usize max_name_len, FILE* out) {
     if (flags == NULL || count == 0) {
         return;
     }
-
-    usize max_name_len = z_help_max_len(flags, count);
 
     for (usize i = 0; i < count; ++i) {
         usize pad = max_name_len + OFFSET - flags[i].name.len;
@@ -108,6 +110,15 @@ void z_cli_print_help_flags(const ZHelpFlag* flags, usize count, FILE* out) {
         z_sv_print(flags[i].desc, out);
         fputc('\n', out);
     }
+}
+
+void z_cli_print_help_flags(const ZHelpFlag* flags, usize count, FILE* out) {
+    if (flags == NULL || count == 0) {
+        return;
+    }
+
+    usize max_name_len = z_help_max_len(flags, count);
+    z_cli_print_help_flags_with_max_len(flags, count, max_name_len, out);
 }
 
 void z_cli_print_help_cmd_usage(const ZHelpInfo* info, const ZHelpCommand* cmd, FILE* out) {
@@ -132,7 +143,7 @@ void z_cli_print_help_cmd_usage(const ZHelpInfo* info, const ZHelpCommand* cmd, 
         if (entry->optional) fputc(']', out);
     }
 
-    if (cmd->flags.flags != NULL && cmd->flags.count > 0) {
+    if ((cmd->flags.flags != NULL && cmd->flags.count > 0) || (info != NULL && z_cli_cmd_has_build_flags(cmd->cmd) && info->build_flags.count > 0)) {
         fputs(" [flags]", out);
     }
     fputc('\n', out);
@@ -158,8 +169,26 @@ void z_cli_print_help_cmd(const ZHelpInfo* info, const ZHelpCommand* cmd, FILE* 
         fputc('\n', out);
     }
 
-    if (cmd->flags.flags != NULL && cmd->flags.count > 0) {
+    bool has_cmd_flags = (cmd->flags.flags != NULL && cmd->flags.count > 0);
+    bool has_build_flags = (info != NULL && z_cli_cmd_has_build_flags(cmd->cmd) && info->build_flags.count > 0);
+
+    if (has_cmd_flags || has_build_flags) {
         fputs(BOLD "Flags:\n" RESET, out);
-        z_cli_print_help_flags(cmd->flags.flags, cmd->flags.count, out);
+
+        usize max_len = 0;
+        if (has_cmd_flags) {
+            max_len = z_help_max_len(cmd->flags.flags, cmd->flags.count);
+        }
+        if (has_build_flags) {
+            usize build_max = z_help_max_len(info->build_flags.flags, info->build_flags.count);
+            if (build_max > max_len) max_len = build_max;
+        }
+
+        if (has_cmd_flags) {
+            z_cli_print_help_flags_with_max_len(cmd->flags.flags, cmd->flags.count, max_len, out);
+        }
+        if (has_build_flags) {
+            z_cli_print_help_flags_with_max_len(info->build_flags.flags, info->build_flags.count, max_len, out);
+        }
     }
 }
