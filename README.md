@@ -38,6 +38,13 @@ or `paru`:
 paru -S zapup
 ```
 
+or manually:
+```sh
+git clone https://aur.archlinux.org/zapup.git zapup
+cd zapup
+makepkg -si
+```
+
 ---
 
 ### Manual installation
