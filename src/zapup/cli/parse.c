@@ -184,6 +184,8 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
     case Z_CLI_CMD_INSTALL:
         if (z_sv_eql(flag, Z_SV("test"))) {
             out->cmd_args.install.test = true;
+        } else if (z_sv_eql(flag, Z_SV("switch")) || z_sv_eql(flag, Z_SV("select"))) {
+            out->cmd_args.install.switch_ = true;
         } else {
             return z_cli_unknown_long_flag(flag);
         }
@@ -222,6 +224,8 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
     case Z_CLI_CMD_INSTALL:
         if (flag == 't') {
             out->cmd_args.install.test = true;
+        } else if (flag == 's') {
+            out->cmd_args.install.switch_ = true;
         } else {
             return z_cli_unknown_short_flag(flag);
         }
