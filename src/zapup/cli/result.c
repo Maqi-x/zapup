@@ -14,6 +14,11 @@ void z_parse_result_print(const ZCliParseResult* result, ZOutputType out) {
     case Z_CLI_PARSE_UNEXPECTED_ARG:
         return z_output(out, "Unexpected argument: " Z_SV_FMT, Z_SV_FARG(result->ctx.str));
 
+    case Z_CLI_PARSE_LONG_FLAG_REDECLARED:
+        return z_output(out, "Flag redeclared: --" Z_SV_FMT, Z_SV_FARG(result->ctx.str));
+    case Z_CLI_PARSE_SHORT_FLAG_REDECLARED:
+        return z_output(out, "Flag redeclared: -%c", result->ctx.c);
+
     case Z_CLI_PARSE_WRONG_ARG_FORMAT:
         return z_output(out, "Wrong format of argument " Z_SV_FMT, Z_SV_FARG(result->arg_name));
     case Z_CLI_PARSE_MISSING_POSITIONAL_ARG:

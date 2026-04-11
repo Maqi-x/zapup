@@ -116,6 +116,32 @@ ZCliParseResult z_cli_parse_jobs(ZStringView val, int* jobs) {
     return Z_CLI_PARSE_RESULT_OK;
 }
 
+ZCliParseResult z_cli_set_bool_flag_long(ZStringView name, bool* out) {
+    if (*out) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_LONG_FLAG_REDECLARED,
+            .arg_name = name,
+            .ctx.str = name,
+        };
+    }
+
+    *out = true;
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
+ZCliParseResult z_cli_set_bool_flag_short(ZStringView name, char c, bool* out) {
+    if (*out) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_SHORT_FLAG_REDECLARED,
+            .arg_name = name,
+            .ctx.c = c,
+        };
+    }
+
+    *out = true;
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
 ZCliParseResult z_cli_unexpected_arg(ZStringView arg) {
     return (ZCliParseResult) {
         .code = Z_CLI_PARSE_UNEXPECTED_ARG,
@@ -178,16 +204,15 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
             ZStringView val = z_sv_trim_prefix(flag, Z_SV("parallel="));
             return z_cli_parse_jobs(val, &build->max_jobs);
         }
-        if (z_sv_eql(flag, Z_SV("test"))) {
-            build->run_tests = true;
-            return Z_CLI_PARSE_RESULT_OK;
+        if (z_sv_eql(flag, Z_SV("test")) || z_sv_eql(flag, Z_SV("run-tests"))) {
+            return z_cli_set_bool_flag_long(Z_SV("test"), &build->run_tests);
         }
     }
 
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
         if (z_sv_eql(flag, Z_SV("switch")) || z_sv_eql(flag, Z_SV("select"))) {
-            out->cmd_args.install.switch_ = true;
+            return z_cli_set_bool_flag_long(Z_SV("switch"), &out->cmd_args.install.switch_);
         } else {
             return z_cli_unknown_long_flag(flag);
         }
@@ -222,15 +247,14 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
             }
             return res;
         } else if (flag == 't') {
-            build->run_tests = true;
-            return Z_CLI_PARSE_RESULT_OK;
+            return z_cli_set_bool_flag_short(Z_SV("test"), 't', &build->run_tests);
         }
     }
 
     switch (out->cmd) {
     case Z_CLI_CMD_INSTALL:
         if (flag == 's') {
-            out->cmd_args.install.switch_ = true;
+            return z_cli_set_bool_flag_short(Z_SV("switch"), 's', &out->cmd_args.install.switch_);
         } else {
             return z_cli_unknown_short_flag(flag);
         }
