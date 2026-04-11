@@ -425,10 +425,16 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
 
 ZCliParseResult z_cli_parse_args(int argc, const char* const* argv, ZCliArgs* out) {
     z_cli_apply_defaults(out);
-    for (usize i = 1; i < (usize)argc; ++i) {
+    bool stop_parsing_flags = false;
+    for (usize i = 1; i < (usize) argc; ++i) {
         ZCliCommand cmd_old = out->cmd;
         ZStringView arg = z_sv_from_cstr(argv[i]);
-        if (z_cli_is_long_flag(arg)) {
+        if (stop_parsing_flags) {
+            ZCliParseResult err = z_cli_handle_arg(arg, out);
+            Z_CLI_HANDLE_ERR(err);
+        } else if (z_sv_eql(arg, Z_SV("--"))) {
+            stop_parsing_flags = true;
+        } else if (z_cli_is_long_flag(arg)) {
             ZStringView flag = z_sv_trim_prefix(arg, Z_SV("--"));
             ZCliParseResult err = z_cli_handle_long_flag(flag, out);
             Z_CLI_HANDLE_ERR(err);
