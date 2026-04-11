@@ -8,7 +8,8 @@ static ZHelpFlag help_global_flags[] = {
 };
 
 static ZHelpFlag help_build_flags[] = {
-    { Z_SV("-j[N], --parallel[=N]"), Z_SV("Enable parallel building with N jobs") },
+    { Z_SV("-j[N], --parallel[=N]"),   Z_SV("Enable parallel building with N jobs") },
+    { Z_SV("--test, --run-tests, -t"), Z_SV("Run tests after instalation") },
 };
 
 static ZHelpCommand help_commands[] = {
@@ -20,8 +21,7 @@ static ZHelpCommand help_commands[] = {
             Z_HELP_USAGE("version", "Zap version to install", false)
         ),
         .flags = Z_HELP_FLAG_ARRAY(
-            { Z_SV("-j[N], --parallel[=N]"), Z_SV("Enable parallel building with N jobs") },
-            { Z_SV("--test, -t"),            Z_SV("Run tests after instalation") },
+            { Z_SV("--switch, --select, -s"), Z_SV("Switch to newly installed version") },
         ),
     },
     {
@@ -91,7 +91,7 @@ static ZHelpCommand help_commands[] = {
         .usage = Z_HELP_USAGE_FIELDS(
             Z_HELP_USAGE("version", "Optional specific version to sync; All if not specified", true)
         ),
-        .flags = Z_HELP_FLAG_ARRAY_FROM(help_build_flags),
+        .flags = Z_HELP_NO_FLAGS,
     },
     {
         .cmd = Z_CLI_CMD_HELP,
