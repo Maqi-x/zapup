@@ -25,6 +25,21 @@ This script will:
 
 ---
 
+### Arch User Repository (AUR)
+
+ZapUp is also available in the Arch User Repository (AUR). You can install it using an AUR helper like `yay`:
+
+```sh
+yay -S zapup
+```
+
+or `paru`:
+```sh
+paru -S zapup
+```
+
+---
+
 ### Manual installation
 
 Clone the zapup repo:
