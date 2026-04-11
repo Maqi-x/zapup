@@ -72,8 +72,41 @@ sudo make install
 
 ---
 
+
 ## Usage
-Run `zapup help` for usage information.
+Run `zapup help` to see all available commands.
+
+## Example
+```sh
+# list installed versions
+zapup list
+
+# install latest
+zapup install latest
+
+# install and switch
+zapup install -s v0.1.1
+
+# install using multiple cores
+zapup install stable -j$(nproc)
+
+# manually switch version
+zapup switch latest
+
+# generate shims
+# run once after installing zapup
+zapup reshim
+
+# use zapc
+# should print version if shims are in PATH
+zapc --version
+
+# otherwise try
+$(zapup which zapc) --version
+
+# uninstall
+zapup uninstall latest
+```
 
 ---
 
