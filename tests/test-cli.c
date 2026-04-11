@@ -16,6 +16,14 @@ void tearDown(void) {}
         TEST_ASSERT_EQUAL_UINT_MESSAGE(Z_CLI_PARSE_OK, res.code, "CLI parse failed"); \
     } while (0)
 
+#define ASSERT_PARSE_ERR(expected_code, argc, argv) \
+    do { \
+        ZCliArgs args; \
+        ZCliParseResult res = z_cli_parse_args(argc, (const char* const*)argv, &args); \
+        TEST_ASSERT_EQUAL_UINT_MESSAGE(expected_code, res.code, "CLI parse did not return expected error code"); \
+    } while (0)
+
+// Happy Cases
 void test_parse_install() {
     const char* argv[] = { "zapup", "install", "v0.1.1" };
     ZCliArgs args;
@@ -146,8 +154,61 @@ void test_parse_test() {
     }
 }
 
+// --- Non-Happy Cases ---
+void test_parse_unknown_command() {
+    const char* argv[] = { "zapup", "invalid-cmd" };
+    ASSERT_PARSE_ERR(Z_CLI_PARSE_UNKNOWN_COMMAND, Z_ARRAY_LEN(argv), argv);
+}
+
+void test_parse_no_command() {
+    const char* argv[] = { "zapup" };
+    ASSERT_PARSE_ERR(Z_CLI_PARSE_COMMAND_EXPECTED, Z_ARRAY_LEN(argv), argv);
+}
+
+void test_parse_missing_version() {
+    {
+        const char* argv[] = { "zapup", "install" };
+        ASSERT_PARSE_ERR(Z_CLI_PARSE_MISSING_POSITIONAL_ARG, Z_ARRAY_LEN(argv), argv);
+    }
+    {
+        const char* argv[] = { "zapup", "uninstall" };
+        ASSERT_PARSE_ERR(Z_CLI_PARSE_MISSING_POSITIONAL_ARG, Z_ARRAY_LEN(argv), argv);
+    }
+    {
+        const char* argv[] = { "zapup", "switch" };
+        ASSERT_PARSE_ERR(Z_CLI_PARSE_MISSING_POSITIONAL_ARG, Z_ARRAY_LEN(argv), argv);
+    }
+}
+
+void test_parse_missing_tool() {
+    const char* argv[] = { "zapup", "which" };
+    ASSERT_PARSE_ERR(Z_CLI_PARSE_MISSING_POSITIONAL_ARG, Z_ARRAY_LEN(argv), argv);
+}
+
+void test_parse_unknown_flag() {
+    {
+        const char* argv[] = { "zapup", "install", "v0.1.1", "--unknown" };
+        ASSERT_PARSE_ERR(Z_CLI_PARSE_UNKNOWN_LONG_FLAG, Z_ARRAY_LEN(argv), argv);
+    }
+    {
+        const char* argv[] = { "zapup", "install", "v0.1.1", "-u" };
+        ASSERT_PARSE_ERR(Z_CLI_PARSE_UNKNOWN_SHORT_FLAG, Z_ARRAY_LEN(argv), argv);
+    }
+}
+
+void test_parse_wrong_arg_format() {
+    const char* argv[] = { "zapup", "sync", "--parallel=abc" };
+    ASSERT_PARSE_ERR(Z_CLI_PARSE_WRONG_ARG_FORMAT, Z_ARRAY_LEN(argv), argv);
+}
+
+void test_parse_unexpected_arg() {
+    const char* argv[] = { "zapup", "switch", "v0.1.1", "extra" };
+    ASSERT_PARSE_ERR(Z_CLI_PARSE_UNEXPECTED_ARG, Z_ARRAY_LEN(argv), argv);
+}
+
 int main(void) {
     UNITY_BEGIN();
+    
     RUN_TEST(test_parse_install);
     RUN_TEST(test_parse_install_flags);
     RUN_TEST(test_parse_uninstall);
@@ -159,5 +220,14 @@ int main(void) {
     RUN_TEST(test_parse_help);
     RUN_TEST(test_parse_sync);
     RUN_TEST(test_parse_test);
+
+    RUN_TEST(test_parse_unknown_command);
+    RUN_TEST(test_parse_no_command);
+    RUN_TEST(test_parse_missing_version);
+    RUN_TEST(test_parse_missing_tool);
+    RUN_TEST(test_parse_unknown_flag);
+    RUN_TEST(test_parse_wrong_arg_format);
+    RUN_TEST(test_parse_unexpected_arg);
+
     return UNITY_END();
 }
