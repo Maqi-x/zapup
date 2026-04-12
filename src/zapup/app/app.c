@@ -14,6 +14,8 @@
 #include <util/fs.h>
 #include <git2.h>
 
+#define LOCAL_CONFIG Z_PV("./.zapup.json")
+
 void zapup_init(ZapupApp* app) {
     git_libgit2_init();
     z_paths_config_load(&app->paths);
@@ -24,6 +26,7 @@ void zapup_init(ZapupApp* app) {
     z_config_init(&app->global_cfg);
     z_config_load(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
     z_config_init(&app->cfg);
+    app->used_local_cfg = false;
 }
 
 int zapup_load_config(ZapupApp* app) {
@@ -31,10 +34,11 @@ int zapup_load_config(ZapupApp* app) {
         return 1;
     }
 
-    if (!app->args.global_args.ignore_local && z_file_exists(Z_PV("./.zapup.json"))) {
-        if (!z_config_merge_load(&app->cfg, Z_PV("./.zapup.json"))) {
+    if (!app->args.global_args.ignore_local && z_file_exists(LOCAL_CONFIG)) {
+        if (!z_config_merge_load(&app->cfg, LOCAL_CONFIG)) {
             return 1;
         }
+        app->used_local_cfg = false;
     }
 
     z_show_debug("CC:  " Z_SV_FMT, Z_SV_FARG(app->cfg.build.cc));
@@ -90,6 +94,7 @@ void zapup_destroy(ZapupApp* app) {
     z_version_index_free(&app->index);
     z_config_save(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
     z_config_free(&app->global_cfg);
+    if (app->used_local_cfg) z_config_save(&app->cfg, LOCAL_CONFIG);
     z_config_free(&app->cfg);
     z_lockfile_destroy(&app->indexlock);
     z_paths_config_destroy(&app->paths);

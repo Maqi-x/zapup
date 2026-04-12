@@ -12,6 +12,8 @@ typedef struct ZapupApp {
     ZConfig cfg;
     ZCliArgs args;
 
+    bool used_local_cfg;
+
     ZPathsConfig paths;
     ZVersionIndex index;
     ZLockFile indexlock;
