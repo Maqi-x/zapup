@@ -365,6 +365,7 @@ bool z_cli_is_short_flag(ZStringView arg) {
 
 void z_cli_apply_defaults(ZCliArgs* out) {
     out->cmd = Z_CLI_CMD_UNKNOWN;
+    out->global_args.global = false;
 }
 
 void z_cli_apply_build_defaults(ZCliBuildArgs* build) {
