@@ -15,9 +15,11 @@ int zapup_switch_to_version(ZapupApp* app, ZapVersion version, bool local) {
         return 1;
     }
 
-    app->cfg.toolchain.active_version = version;
-    if (local) {
+    if (local){
+        app->cfg.toolchain.active_version = version;
         app->used_local_cfg = true;
+    } else {
+        app->global_cfg.toolchain.active_version = version;
     }
 
     if (!z_zap_ver_is_null(old_ver)) {
