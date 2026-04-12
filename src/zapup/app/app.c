@@ -38,7 +38,7 @@ int zapup_load_config(ZapupApp* app) {
         if (!z_config_merge_load(&app->cfg, LOCAL_CONFIG)) {
             return 1;
         }
-        app->used_local_cfg = false;
+        app->used_local_cfg = true;
     }
 
     z_show_debug("CC:  " Z_SV_FMT, Z_SV_FARG(app->cfg.build.cc));
