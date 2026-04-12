@@ -222,9 +222,16 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
         }
         break;
 
+    case Z_CLI_CMD_SWITCH:
+        if (z_sv_eql(flag, Z_SV("local")))  {
+            return z_cli_set_bool_flag_long(Z_SV("local"), &out->cmd_args.switch_.local);
+        } else {
+            return z_cli_unknown_long_flag(flag);
+        }
+        break;
+
     case Z_CLI_CMD_UNINSTALL:
     case Z_CLI_CMD_RESHIM:
-    case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_SHOW:
@@ -264,9 +271,16 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
         }
         break;
 
+    case Z_CLI_CMD_SWITCH:
+        if (flag == 'l') {
+            return z_cli_set_bool_flag_short(Z_SV("local"), flag, &out->cmd_args.switch_.local);
+        } else {
+            return z_cli_unknown_short_flag(flag);
+        }
+        break;
+
     case Z_CLI_CMD_UNINSTALL:
     case Z_CLI_CMD_RESHIM:
-    case Z_CLI_CMD_SWITCH:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_SHOW:
@@ -392,6 +406,7 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         break;
     case Z_CLI_CMD_SWITCH:
         out->cmd_args.switch_.version = Z_ZAP_VERSION_NULL;
+        out->cmd_args.switch_.local = false;
         break;
     case Z_CLI_CMD_LIST:
     case Z_CLI_CMD_SHOW:

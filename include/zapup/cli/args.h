@@ -50,6 +50,7 @@ typedef struct ZCliShowArgs {
 
 typedef struct ZCliSwitchArgs {
     ZapVersion version;
+    bool local;
 } ZCliSwitchArgs;
 
 typedef struct ZCliWhichArgs {
