@@ -8,8 +8,11 @@
 #include <zapup/index.h>
 
 typedef struct ZapupApp {
+    ZConfig global_cfg;
     ZConfig cfg;
     ZCliArgs args;
+
+    bool used_local_cfg;
 
     ZPathsConfig paths;
     ZVersionIndex index;

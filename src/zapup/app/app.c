@@ -11,7 +11,10 @@
 #include <zapup/output.h>
 #include <zapup/help.h>
 
+#include <util/fs.h>
 #include <git2.h>
+
+#define LOCAL_CONFIG Z_PV("./.zapup.json")
 
 void zapup_init(ZapupApp* app) {
     git_libgit2_init();
@@ -20,8 +23,27 @@ void zapup_init(ZapupApp* app) {
     z_version_index_init(&app->index);
     z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_lockfile_init(&app->indexlock);
+    z_config_init(&app->global_cfg);
+    z_config_load(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
     z_config_init(&app->cfg);
-    z_config_load(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile));
+    app->used_local_cfg = false;
+}
+
+int zapup_load_config(ZapupApp* app) {
+    if (!z_config_load(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile))) {
+        return 1;
+    }
+
+    if (!app->args.global_args.ignore_local && z_file_exists(LOCAL_CONFIG)) {
+        if (!z_config_merge_load(&app->cfg, LOCAL_CONFIG)) {
+            return 1;
+        }
+        app->used_local_cfg = true;
+    }
+
+    z_show_debug("CC:  " Z_SV_FMT, Z_SV_FARG(app->cfg.build.cc));
+    z_show_debug("CXX: " Z_SV_FMT, Z_SV_FARG(app->cfg.build.cxx));
+    return 0;
 }
 
 int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
@@ -31,6 +53,11 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
         ZHelpInfo info = zapup_get_help();
         zapup_show_help(&info, app->args.cmd, stderr);
         return 1;
+    }
+
+    int result = zapup_load_config(app);
+    if (result != 0) {
+        return result;
     }
 
     switch (app->args.cmd) {
@@ -65,7 +92,9 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 void zapup_destroy(ZapupApp* app) {
     z_version_index_save(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_version_index_free(&app->index);
-    z_config_save(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile));
+    z_config_save(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
+    z_config_free(&app->global_cfg);
+    if (app->used_local_cfg) z_config_save(&app->cfg, LOCAL_CONFIG);
     z_config_free(&app->cfg);
     z_lockfile_destroy(&app->indexlock);
     z_paths_config_destroy(&app->paths);

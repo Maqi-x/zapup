@@ -72,7 +72,7 @@ int zapup_exec_install(ZapupApp* app) {
         }
 
         if (args->switch_) {
-            res = zapup_switch_to_version(app, v);
+            res = zapup_switch_to_version(app, v, false);
             if (res != 0) {
                 z_lockfile_unlock(&app->indexlock);
                 z_pathbuf_destroy(&out_path);

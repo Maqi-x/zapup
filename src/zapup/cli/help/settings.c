@@ -4,7 +4,8 @@
 #include <util/arr-len.h>
 
 static ZHelpFlag help_global_flags[] = {
-    { Z_SV("-h, --help"), Z_SV("Show this help message") },
+    { Z_SV("--help, -h"),   Z_SV("Show this help message") },
+    { Z_SV("--global, -g"), Z_SV("Ignore local project config and use only global configuration") },
 };
 
 static ZHelpFlag help_build_flags[] = {
@@ -49,7 +50,9 @@ static ZHelpCommand help_commands[] = {
         .usage = Z_HELP_USAGE_FIELDS(
             Z_HELP_USAGE("version", "Installed Zap version to set as current", false)
         ),
-        .flags = Z_HELP_NO_FLAGS,
+        .flags = Z_HELP_FLAG_ARRAY(
+            { Z_SV("--local, -l"), Z_SV("Change version in local config instead of global") },
+        ),
     },
     {
         .cmd = Z_CLI_CMD_LIST,

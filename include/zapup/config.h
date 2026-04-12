@@ -24,7 +24,9 @@ void z_config_init(ZConfig* cfg);
 void z_config_free(ZConfig* cfg);
 
 void z_config_from_json(ZConfig* cfg, ZStringView json);
+void z_config_merge_from_json(ZConfig* cfg, ZStringView json);
 bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out);
 
 bool z_config_load(ZConfig* cfg, ZPathView path);
+bool z_config_merge_load(ZConfig* cfg, ZPathView path);
 bool z_config_save(const ZConfig* cfg, ZPathView path);
