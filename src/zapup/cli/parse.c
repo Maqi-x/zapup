@@ -362,12 +362,22 @@ bool z_cli_is_short_flag(ZStringView arg) {
 void z_cli_apply_defaults(ZCliArgs* out) {
     out->cmd = Z_CLI_CMD_UNKNOWN;
 }
+
+void z_cli_apply_build_defaults(ZCliBuildArgs* build) {
+    build->parallel = false;
+    build->max_jobs = 0;
+    build->run_tests = false;
+}
+
 void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
+    ZCliBuildArgs* build = z_cli_get_build_args(out);
+    if (build) {
+        z_cli_apply_build_defaults(build);
+    }
+
     switch (cmd) {
     case Z_CLI_CMD_INSTALL:
         out->cmd_args.install.version = Z_ZAP_VERSION_NULL;
-        out->cmd_args.install.build.parallel = false;
-        out->cmd_args.install.build.max_jobs = 0;
         break;
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
@@ -386,8 +396,6 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
         break;
     case Z_CLI_CMD_SYNC:
         out->cmd_args.sync.version = Z_ZAP_VERSION_NULL;
-        out->cmd_args.sync.build.parallel = false;
-        out->cmd_args.sync.build.max_jobs = 0;
         break;
     case Z_CLI_CMD_WHICH:
         out->cmd_args.which.version = Z_ZAP_VERSION_NULL;
