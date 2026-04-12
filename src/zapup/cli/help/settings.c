@@ -50,7 +50,9 @@ static ZHelpCommand help_commands[] = {
         .usage = Z_HELP_USAGE_FIELDS(
             Z_HELP_USAGE("version", "Installed Zap version to set as current", false)
         ),
-        .flags = Z_HELP_NO_FLAGS,
+        .flags = Z_HELP_FLAG_ARRAY(
+            { Z_SV("--local, -l"), Z_SV("Change version in local config instead of global") },
+        ),
     },
     {
         .cmd = Z_CLI_CMD_LIST,
