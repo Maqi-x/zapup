@@ -4,7 +4,8 @@
 #include <util/arr-len.h>
 
 static ZHelpFlag help_global_flags[] = {
-    { Z_SV("-h, --help"), Z_SV("Show this help message") },
+    { Z_SV("--help, -h"),   Z_SV("Show this help message") },
+    { Z_SV("--global, -g"), Z_SV("Ignore local project config and use only global configuration") },
 };
 
 static ZHelpFlag help_build_flags[] = {
