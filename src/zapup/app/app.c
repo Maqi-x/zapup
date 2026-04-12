@@ -21,6 +21,8 @@ void zapup_init(ZapupApp* app) {
     z_version_index_init(&app->index);
     z_version_index_load(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_lockfile_init(&app->indexlock);
+    z_config_init(&app->global_cfg);
+    z_config_load(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
     z_config_init(&app->cfg);
 }
 
@@ -86,7 +88,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 void zapup_destroy(ZapupApp* app) {
     z_version_index_save(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_version_index_free(&app->index);
-    z_config_save(&app->cfg, z_pathbuf_as_view(&app->paths.cfgfile));
+    z_config_save(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
+    z_config_free(&app->global_cfg);
     z_config_free(&app->cfg);
     z_lockfile_destroy(&app->indexlock);
     z_paths_config_destroy(&app->paths);
