@@ -19,16 +19,7 @@ void z_config_free(ZConfig* cfg) {
     z_config_init(cfg);
 }
 
-void z_config_from_json(ZConfig* cfg, ZStringView json) {
-    z_config_free(cfg);
-
-    yyjson_read_flag flg = YYJSON_READ_NOFLAG;
-    yyjson_read_err err;
-    yyjson_doc* doc = yyjson_read_opts((char*)json.data, json.len, flg, NULL, &err);
-    if (!doc) return;
-
-    cfg->_ctx = doc;
-    yyjson_val* root = yyjson_doc_get_root(doc);
+static void z_config_populate(ZConfig* cfg, yyjson_val* root) {
     if (!yyjson_is_obj(root)) return;
 
     yyjson_val* v_toolchain = yyjson_obj_get(root, "toolchain");
@@ -90,6 +81,46 @@ void z_config_from_json(ZConfig* cfg, ZStringView json) {
             cfg->build.cxx = z_sv_from_data_and_len(yyjson_get_str(v_cxx), yyjson_get_len(v_cxx));
         }
     }
+}
+
+void z_config_from_json(ZConfig* cfg, ZStringView json) {
+    z_config_free(cfg);
+    z_config_merge_from_json(cfg, json);
+}
+
+void z_config_merge_from_json(ZConfig* cfg, ZStringView json) {
+    yyjson_read_flag flg = YYJSON_READ_NOFLAG;
+    yyjson_read_err err;
+    yyjson_doc* patch_doc = yyjson_read_opts((char*)json.data, json.len, flg, NULL, &err);
+    if (!patch_doc) return;
+
+    yyjson_val* patch_root = yyjson_doc_get_root(patch_doc);
+    yyjson_mut_doc* mut_doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val* merged_root;
+
+    if (cfg->_ctx) {
+        yyjson_val* orig_root = yyjson_doc_get_root((yyjson_doc*)cfg->_ctx);
+        merged_root = yyjson_merge_patch(mut_doc, orig_root, patch_root);
+    } else {
+        merged_root = yyjson_val_mut_copy(mut_doc, patch_root);
+    }
+
+    yyjson_mut_doc_set_root(mut_doc, merged_root);
+    yyjson_doc* new_doc = yyjson_mut_doc_imut_copy(mut_doc, NULL);
+
+    if (cfg->_ctx) {
+        yyjson_doc_free((yyjson_doc*)cfg->_ctx);
+    }
+    cfg->_ctx = new_doc;
+
+    yyjson_doc_free(patch_doc);
+    yyjson_mut_doc_free(mut_doc);
+
+    cfg->toolchain.active_version = Z_ZAP_VERSION_NULL;
+    cfg->build.cc = Z_SV("cc");
+    cfg->build.cxx = Z_SV("c++");
+
+    z_config_populate(cfg, yyjson_doc_get_root(new_doc));
 }
 
 bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
@@ -169,6 +200,19 @@ bool z_config_load(ZConfig* cfg, ZPathView path) {
     }
 
     z_config_from_json(cfg, z_strbuf_view(&content));
+    z_strbuf_destroy(&content);
+    return true;
+}
+
+bool z_config_merge_load(ZConfig* cfg, ZPathView path) {
+    ZStringBuf content;
+    z_strbuf_init(&content);
+    if (!z_read_file(path, &content)) {
+        z_strbuf_destroy(&content);
+        return false;
+    }
+
+    z_config_merge_from_json(cfg, z_strbuf_view(&content));
     z_strbuf_destroy(&content);
     return true;
 }
