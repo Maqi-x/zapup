@@ -67,7 +67,7 @@ typedef struct ZCliHelpArgs {
 
 
 typedef struct ZCliGlobalArgs {
-
+    bool global;
 } ZCliGlobalArgs;
 
 typedef struct ZCliArgs {
