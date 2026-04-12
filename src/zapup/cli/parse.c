@@ -167,7 +167,7 @@ ZCliParseResult z_cli_handle_global_long_flag(ZStringView flag, ZCliArgs* out) {
         out->cmd = Z_CLI_CMD_HELP;
         return Z_CLI_PARSE_RESULT_STOP;
     } else if (z_sv_eql(flag, Z_SV("global")) || z_sv_eql(flag, Z_SV("ignore-local"))) {
-        return z_cli_set_bool_flag_long(flag, &out->global_args.global);
+        return z_cli_set_bool_flag_long(flag, &out->global_args.ignore_local);
     }
     return z_cli_unknown_long_flag(flag);
 }
@@ -178,7 +178,7 @@ ZCliParseResult z_cli_handle_global_short_flag(char flag, ZCliArgs* out) {
         out->cmd = Z_CLI_CMD_HELP;
         return Z_CLI_PARSE_RESULT_STOP;
     } else if (flag == 'g') {
-        return z_cli_set_bool_flag_short(Z_SV("global"), flag, &out->global_args.global);
+        return z_cli_set_bool_flag_short(Z_SV("global"), flag, &out->global_args.ignore_local);
     }
     return z_cli_unknown_short_flag(flag);
 }
@@ -365,7 +365,7 @@ bool z_cli_is_short_flag(ZStringView arg) {
 
 void z_cli_apply_defaults(ZCliArgs* out) {
     out->cmd = Z_CLI_CMD_UNKNOWN;
-    out->global_args.global = false;
+    out->global_args.ignore_local = false;
 }
 
 void z_cli_apply_build_defaults(ZCliBuildArgs* build) {
