@@ -1,0 +1,13 @@
+{
+    "toolchain": {
+        "active_version": {
+            "branch": "",
+            "ref_type": "stable",
+            "build": "release"
+        }
+    },
+    "build": {
+        "cc": "clang",
+        "cxx": "clang++"
+    }
+}

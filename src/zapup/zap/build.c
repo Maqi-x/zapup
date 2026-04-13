@@ -93,9 +93,11 @@ ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
         goto cleanup;
     }
 
-    if (!z_run_zap_tests(opts->ver, opts->zap_root, NULL)) {
-        final_res.code = Z_ZAP_BUILD_TESTS_ERR;
-        goto cleanup;
+    if (opts->run_tests){
+        if (!z_run_zap_tests(opts->ver, opts->zap_root, NULL)) {
+            final_res.code = Z_ZAP_BUILD_TESTS_ERR;
+            goto cleanup;
+        }
     }
 
 cleanup:
