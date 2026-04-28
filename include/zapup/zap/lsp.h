@@ -9,9 +9,9 @@ typedef enum ZapLspTarget {
 } ZapLspTarget;
 
 typedef enum ZapNvimLspMode {
-    Z_NVIM_LSP_INIT_LUA,
-    Z_NVIM_LSP_LAZY,
-    Z_NVIM_LSP_UNKNOWN,
+    Z_NVIM_LSP_UNKNOWN  = 0,
+    Z_NVIM_LSP_INIT_LUA = 1 << 0,
+    Z_NVIM_LSP_LAZY     = 1 << 1,
 } ZapNvimLspMode;
 
 static inline ZStringView z_format_zap_lsp_target(ZapLspTarget target) {
