@@ -5,9 +5,11 @@
 #include <zapup/cli/args.h>
 #include <zapup/storage.h>
 #include <zapup/config.h>
+#include <zapup/lspcfg.h>
 #include <zapup/index.h>
 
 typedef struct ZapupApp {
+    ZLspConfig lsp_cfg;
     ZConfig global_cfg;
     ZConfig local_cfg;
     ZConfig cfg;
