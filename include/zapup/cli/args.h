@@ -2,10 +2,12 @@
 
 #include <zapup/zap/toolchain.h>
 #include <zapup/zap/version.h>
+#include <zapup/zap/lsp.h>
 
 typedef enum ZCliCommand {
     Z_CLI_CMD_INSTALL,
     Z_CLI_CMD_UNINSTALL,
+    Z_CLI_CMD_INIT_LSP,
     Z_CLI_CMD_RESHIM,
     Z_CLI_CMD_SWITCH,
     Z_CLI_CMD_WHICH,
@@ -22,6 +24,11 @@ typedef struct ZCliBuildArgs {
     int max_jobs; // 0 means no limit if parallel is true
     bool run_tests;
 } ZCliBuildArgs;
+
+typedef struct ZCliInitLspArgs {
+    ZapLspTarget targets; // one or more
+    ZapNvimLspMode nvim_mode; // unknown if !(targets & Z_LSP_NVIM)
+} ZCliInitLspArgs;
 
 typedef struct ZCliInstallArgs {
     ZapVersion version;
@@ -77,6 +84,7 @@ typedef struct ZCliArgs {
     union {
         ZCliInstallArgs install;
         ZCliUninstallArgs uninstall;
+        ZCliInitLspArgs init_lsp;
         ZCliReshimArgs reshim;
         ZCliSwitchArgs switch_;
         ZCliListArgs list;
