@@ -97,7 +97,7 @@ bool z_paths_config_load(ZPathsConfig* cfg) {
     if (!z_paths_find_versions_dir(&cfg->versions)) return false;
     if (!z_paths_find_shims_dir(&cfg->shims))       return false;
     if (!z_paths_find_cfg_file(&cfg->cfgfile))      return false;
-    if (!z_paths_find_cfg_file(&cfg->lspcfg))       return false;
+    if (!z_paths_find_lsp_cfg(&cfg->lspcfg))        return false;
     if (!z_paths_find_index_file(&cfg->indexfile))  return false;
     if (!z_paths_find_index_lock(&cfg->indexlock))  return false;
     return true;
