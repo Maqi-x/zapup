@@ -70,6 +70,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
         return zapup_exec_install(app);
     case Z_CLI_CMD_UNINSTALL:
         return zapup_exec_uninstall(app);
+    case Z_CLI_CMD_INIT_LSP:
+        return zapup_exec_init_lsp(app);
     case Z_CLI_CMD_RESHIM:
         return zapup_exec_reshim(app);
     case Z_CLI_CMD_SWITCH:
