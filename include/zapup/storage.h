@@ -11,6 +11,7 @@ typedef struct ZPathsConfig {
     ZPathBuf shims;
 
     ZPathBuf cfgfile;
+    ZPathBuf lspcfg;
     ZPathBuf indexfile;
     ZPathBuf indexlock;
 } ZPathsConfig;
