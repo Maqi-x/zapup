@@ -3,6 +3,7 @@
 
 #include <zapup/output.h>
 #include <zapup/zap/sync.h>
+#include <zapup/lsp/reinit.h>
 
 int zapup_sync_single_entry(ZapupApp* app, const ZCliSyncArgs* args, ZVersionIndexEntry* entry) {
     ZapVersion ver = z_version_index_entry_version(entry);
@@ -77,6 +78,11 @@ int zapup_exec_sync(ZapupApp* app) {
         z_lockfile_unlock(&app->indexlock);
         return result;
     }
+
+    ZapVersion ver = app->cfg.toolchain.active_version;
+    ZVersionIndexEntry* current = z_version_index_find_by_version(&app->index, ver);
+    ZPathView zap_root = z_strbuf_view(&current->path);
+    z_reinit_lsp(ver, zap_root, app->lsp_cfg.targets, app->lsp_cfg.nvim_mode);
 
     return 0;
 }
