@@ -9,6 +9,7 @@
 
 typedef struct ZapupApp {
     ZConfig global_cfg;
+    ZConfig local_cfg;
     ZConfig cfg;
     ZCliArgs args;
 

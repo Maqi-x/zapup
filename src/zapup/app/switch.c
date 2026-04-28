@@ -3,7 +3,7 @@
 #include <util/strbuf.h>
 
 int zapup_switch_to_version(ZapupApp* app, ZapVersion version, bool local) {
-    ZConfig* cfg = local ? &app->cfg : &app->global_cfg;
+    ZConfig* cfg = local ? &app->local_cfg : &app->global_cfg;
     ZapVersion old_ver = cfg->toolchain.active_version;
 
     ZStringBuf new_version_formatted;
@@ -18,6 +18,10 @@ int zapup_switch_to_version(ZapupApp* app, ZapVersion version, bool local) {
 
     cfg->toolchain.active_version = version;
     if (local) app->used_local_cfg = true;
+
+    if (local || !app->used_local_cfg) {
+        app->cfg.toolchain.active_version = version;
+    }
 
     if (!z_zap_ver_is_null(old_ver)) {
         ZStringBuf old_version_formatted;
