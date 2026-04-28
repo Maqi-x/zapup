@@ -7,8 +7,8 @@
 
 void z_config_init(ZConfig* cfg) {
     cfg->toolchain.active_version = Z_ZAP_VERSION_NULL;
-    cfg->build.cc = Z_SV("cc");
-    cfg->build.cxx = Z_SV("c++");
+    cfg->build.cc = Z_SV_NULL;
+    cfg->build.cxx = Z_SV_NULL;
     cfg->_ctx = NULL;
 }
 
@@ -17,6 +17,15 @@ void z_config_free(ZConfig* cfg) {
         yyjson_doc_free((yyjson_doc*)cfg->_ctx);
     }
     z_config_init(cfg);
+}
+
+void z_config_apply_defaults(ZConfig* cfg) {
+    if (z_sv_is_null(cfg->build.cc)) {
+        cfg->build.cc = Z_SV("cc");
+    }
+    if (z_sv_is_null(cfg->build.cxx)) {
+        cfg->build.cxx = Z_SV("c++");
+    }
 }
 
 static void z_config_populate(ZConfig* cfg, yyjson_val* root) {
@@ -117,10 +126,21 @@ void z_config_merge_from_json(ZConfig* cfg, ZStringView json) {
     yyjson_mut_doc_free(mut_doc);
 
     cfg->toolchain.active_version = Z_ZAP_VERSION_NULL;
-    cfg->build.cc = Z_SV("cc");
-    cfg->build.cxx = Z_SV("c++");
+    cfg->build.cc = Z_SV_NULL;
+    cfg->build.cxx = Z_SV_NULL;
 
     z_config_populate(cfg, yyjson_doc_get_root(new_doc));
+}
+
+void z_config_merge_from_config(ZConfig* cfg, const ZConfig* src) {
+    // this sucks, but for now there's no better way to do that without redesigning the whole architecture
+    // and i'm too lazy to do that so yeah
+    ZStringBuf json;
+    z_strbuf_init(&json);
+    if (z_config_to_json(src, &json)) {
+        z_config_merge_from_json(cfg, z_strbuf_view(&json));
+    }
+    z_strbuf_destroy(&json);
 }
 
 bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
@@ -129,10 +149,10 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
     yyjson_mut_doc_set_root(doc, root);
 
     // Toolchain
-    yyjson_mut_val* toolchain = yyjson_mut_obj(doc);
-    yyjson_mut_obj_add_val(doc, root, "toolchain", toolchain);
-
     if (!z_zap_ver_is_null(cfg->toolchain.active_version)) {
+        yyjson_mut_val* toolchain = yyjson_mut_obj(doc);
+        yyjson_mut_obj_add_val(doc, root, "toolchain", toolchain);
+
         yyjson_mut_val* active = yyjson_mut_obj(doc);
         yyjson_mut_obj_add_val(doc, toolchain, "active_version", active);
 
@@ -167,14 +187,16 @@ bool z_config_to_json(const ZConfig* cfg, ZStringBuf* out) {
     }
 
     // Build
-    yyjson_mut_val* build = yyjson_mut_obj(doc);
-    yyjson_mut_obj_add_val(doc, root, "build", build);
+    if (!z_sv_is_null(cfg->build.cc) || !z_sv_is_null(cfg->build.cxx)) {
+        yyjson_mut_val* build = yyjson_mut_obj(doc);
+        yyjson_mut_obj_add_val(doc, root, "build", build);
 
-    if (!z_sv_is_null(cfg->build.cc)) {
-        yyjson_mut_obj_add_strn(doc, build, "cc", cfg->build.cc.data, cfg->build.cc.len);
-    }
-    if (!z_sv_is_null(cfg->build.cxx)) {
-        yyjson_mut_obj_add_strn(doc, build, "cxx", cfg->build.cxx.data, cfg->build.cxx.len);
+        if (!z_sv_is_null(cfg->build.cc)) {
+            yyjson_mut_obj_add_strn(doc, build, "cc", cfg->build.cc.data, cfg->build.cc.len);
+        }
+        if (!z_sv_is_null(cfg->build.cxx)) {
+            yyjson_mut_obj_add_strn(doc, build, "cxx", cfg->build.cxx.data, cfg->build.cxx.len);
+        }
     }
 
     yyjson_write_err err;
