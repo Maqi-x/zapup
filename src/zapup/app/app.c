@@ -31,7 +31,7 @@ void zapup_init(ZapupApp* app) {
 }
 
 int zapup_load_config(ZapupApp* app) {
-    z_lspcfg_from_json(&app->lsp_cfg, z_pathbuf_as_view(&app->paths.lspcfg));
+    z_lspcfg_load(&app->lsp_cfg, z_pathbuf_as_view(&app->paths.lspcfg));
 
     if (!app->args.global_args.ignore_local && z_file_exists(LOCAL_CONFIG)) {
         if (!z_config_load(&app->local_cfg, LOCAL_CONFIG)) {
