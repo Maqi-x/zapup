@@ -2,6 +2,7 @@
 
 int zapup_exec_install(ZapupApp* app);
 int zapup_exec_uninstall(ZapupApp* app);
+int zapup_exec_init_lsp(ZapupApp* app);
 int zapup_exec_reshim(ZapupApp* app);
 int zapup_exec_switch(ZapupApp* app);
 int zapup_exec_which(ZapupApp* app);

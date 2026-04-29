@@ -1,5 +1,7 @@
 #include <zapup/app/switch.h>
+#include <zapup/lsp/reinit.h>
 #include <zapup/output.h>
+
 #include <util/strbuf.h>
 
 int zapup_switch_to_version(ZapupApp* app, ZapVersion version, bool local) {
@@ -36,6 +38,10 @@ int zapup_switch_to_version(ZapupApp* app, ZapVersion version, bool local) {
     } else {
         z_show_info("Switched to " Z_SV_FMT, Z_SV_FARG(z_strbuf_view(&new_version_formatted)));
     }
+
+    ZVersionIndexEntry* current = z_version_index_find_by_version(&app->index, version);
+    ZPathView zap_root = z_strbuf_view(&current->path);
+    z_reinit_lsp(version, zap_root, app->lsp_cfg.targets, app->lsp_cfg.nvim_mode);
 
     z_strbuf_destroy(&new_version_formatted);
     return 0;

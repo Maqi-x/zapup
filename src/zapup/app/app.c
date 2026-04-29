@@ -31,6 +31,8 @@ void zapup_init(ZapupApp* app) {
 }
 
 int zapup_load_config(ZapupApp* app) {
+    z_lspcfg_load(&app->lsp_cfg, z_pathbuf_as_view(&app->paths.lspcfg));
+
     if (!app->args.global_args.ignore_local && z_file_exists(LOCAL_CONFIG)) {
         if (!z_config_load(&app->local_cfg, LOCAL_CONFIG)) {
             return 1;
@@ -68,6 +70,8 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
         return zapup_exec_install(app);
     case Z_CLI_CMD_UNINSTALL:
         return zapup_exec_uninstall(app);
+    case Z_CLI_CMD_INIT_LSP:
+        return zapup_exec_init_lsp(app);
     case Z_CLI_CMD_RESHIM:
         return zapup_exec_reshim(app);
     case Z_CLI_CMD_SWITCH:
@@ -95,6 +99,7 @@ int zapup_run(ZapupApp* app, int argc, const char* const* argv) {
 void zapup_destroy(ZapupApp* app) {
     z_version_index_save(&app->index, z_pathbuf_as_view(&app->paths.indexfile));
     z_version_index_free(&app->index);
+    z_lspcfg_save(&app->lsp_cfg, z_pathbuf_as_view(&app->paths.lspcfg));
     z_config_save(&app->global_cfg, z_pathbuf_as_view(&app->paths.cfgfile));
     z_config_free(&app->global_cfg);
     if (app->used_local_cfg) z_config_save(&app->local_cfg, LOCAL_CONFIG);

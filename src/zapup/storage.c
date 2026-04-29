@@ -85,6 +85,11 @@ bool z_paths_find_cfg_file(ZPathBuf* out) {
     return z_pathbuf_join(out, Z_PV("config.json"));
 }
 
+bool z_paths_find_lsp_cfg(ZPathBuf* out) {
+    if (!z_paths_find_config_dir(out)) return false;
+    return z_pathbuf_join(out, Z_PV("lspcfg.json"));
+}
+
 bool z_paths_config_load(ZPathsConfig* cfg) {
     if (!z_paths_find_config_dir(&cfg->config))     return false;
     if (!z_paths_find_data_dir(&cfg->data))         return false;
@@ -92,6 +97,7 @@ bool z_paths_config_load(ZPathsConfig* cfg) {
     if (!z_paths_find_versions_dir(&cfg->versions)) return false;
     if (!z_paths_find_shims_dir(&cfg->shims))       return false;
     if (!z_paths_find_cfg_file(&cfg->cfgfile))      return false;
+    if (!z_paths_find_lsp_cfg(&cfg->lspcfg))        return false;
     if (!z_paths_find_index_file(&cfg->indexfile))  return false;
     if (!z_paths_find_index_lock(&cfg->indexlock))  return false;
     return true;
@@ -108,6 +114,7 @@ bool z_paths_ensure_exists(ZPathsConfig* cfg) {
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->shims)))     return false;
     if (!z_mkdir_all(z_pathbuf_as_view(&cfg->versions)))  return false;
     if (!create_file(z_pathbuf_as_view(&cfg->cfgfile)))   return false;
+    if (!create_file(z_pathbuf_as_view(&cfg->lspcfg)))    return false;
     if (!create_file(z_pathbuf_as_view(&cfg->indexfile))) return false;
     return true;
 }
@@ -119,6 +126,7 @@ void z_paths_config_destroy(ZPathsConfig* cfg) {
     z_pathbuf_destroy(&cfg->config);
     z_pathbuf_destroy(&cfg->versions);
     z_pathbuf_destroy(&cfg->cfgfile);
+    z_pathbuf_destroy(&cfg->lspcfg);
     z_pathbuf_destroy(&cfg->indexfile);
     z_pathbuf_destroy(&cfg->indexlock);
 }

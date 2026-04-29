@@ -7,6 +7,14 @@
 #include <util/arr-len.h>
 #include <util/macros.h>
 
+#define Z_CLI_HANDLE_ERR(ERR)               \
+    if ((ERR).code == _Z_CLI_PARSE_STOP) {  \
+        return Z_CLI_PARSE_RESULT_OK;       \
+    }                                       \
+    if ((ERR).code != Z_CLI_PARSE_OK) {     \
+        return (ERR);                       \
+    }
+
 ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     static const struct {
         ZStringView name;
@@ -14,6 +22,7 @@ ZCliParseResult z_find_cmd_from_arg(ZStringView arg, ZCliCommand* cmd) {
     } table[] = {
         { Z_SV("install"),   Z_CLI_CMD_INSTALL },
         { Z_SV("uninstall"), Z_CLI_CMD_UNINSTALL },
+        { Z_SV("init-lsp"),  Z_CLI_CMD_INIT_LSP },
         { Z_SV("reshim"),    Z_CLI_CMD_RESHIM },
         { Z_SV("switch"),    Z_CLI_CMD_SWITCH },
         { Z_SV("select"),    Z_CLI_CMD_SWITCH },
@@ -79,6 +88,69 @@ ZCliParseResult z_cli_try_parse_tool_into(ZStringView arg, ZapToolchainElement* 
         };
     }
     *tool = parsed;
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
+ZCliParseResult z_cli_try_parse_init_lsp_part_into(ZStringView part, ZCliInitLspArgs* out) {
+    if (part.len == 0) return Z_CLI_PARSE_RESULT_OK;
+
+    ZStringView key = part;
+    ZStringView val = Z_SV_NULL;
+    bool has_val = false;
+
+    for (usize j = 0; j < part.len; j++) {
+        if (part.data[j] == '=') {
+            key = z_sv_slice(part, 0, j);
+            val = z_sv_slice(part, j + 1, part.len);
+            has_val = true;
+            break;
+        }
+    }
+
+    ZapLspTarget target = z_parse_zap_lsp_target(key);
+    if (target == Z_LSP_UNKNOWN) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+            .arg_name = Z_SV("lsp-target"),
+            .ctx.str = key,
+        };
+    }
+
+    out->targets |= target;
+
+    if (target == Z_LSP_NVIM) {
+        if (has_val) {
+            ZapNvimLspMode mode = z_parse_nvim_lsp_mode(val);
+            if (mode == Z_NVIM_LSP_UNKNOWN) {
+                return (ZCliParseResult) {
+                    .code = Z_CLI_PARSE_WRONG_ARG_FORMAT,
+                    .arg_name = Z_SV("nvim-lsp-mode"),
+                    .ctx.str = val,
+                };
+            }
+            out->nvim_mode |= mode;
+        } else {
+            out->nvim_mode |= Z_NVIM_LSP_INIT_LUA;
+        }
+    } else if (has_val) {
+        return (ZCliParseResult) {
+            .code = Z_CLI_PARSE_UNEXPECTED_ARG,
+            .ctx.str = val,
+        };
+    }
+
+    return Z_CLI_PARSE_RESULT_OK;
+}
+
+ZCliParseResult z_cli_try_parse_init_lsp_arg_into(ZStringView arg, ZCliInitLspArgs* out) {
+    usize start = 0;
+    for (usize i = 0; i <= arg.len; i++) {
+        if (i == arg.len || arg.data[i] == ',') {
+            ZStringView part = z_sv_slice(arg, start, i);
+            Z_CLI_HANDLE_ERR(z_cli_try_parse_init_lsp_part_into(part, out));
+            start = i + 1;
+        }
+    }
     return Z_CLI_PARSE_RESULT_OK;
 }
 
@@ -231,6 +303,7 @@ ZCliParseResult z_cli_handle_cmd_long_flag(ZStringView flag, ZCliArgs* out) {
         break;
 
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_INIT_LSP:
     case Z_CLI_CMD_RESHIM:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
@@ -280,6 +353,7 @@ ZCliParseResult z_cli_handle_cmd_short_flag(ZStringView flags, usize* i, ZCliArg
         break;
 
     case Z_CLI_CMD_UNINSTALL:
+    case Z_CLI_CMD_INIT_LSP:
     case Z_CLI_CMD_RESHIM:
     case Z_CLI_CMD_WHICH:
     case Z_CLI_CMD_LIST:
@@ -300,6 +374,8 @@ ZCliParseResult z_cli_handle_cmd_arg(ZStringView arg, ZCliArgs* out) {
         return z_cli_try_parse_version_into(arg, &out->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_try_parse_version_into(arg, &out->cmd_args.uninstall.version);
+    case Z_CLI_CMD_INIT_LSP:
+        return z_cli_try_parse_init_lsp_arg_into(arg, &out->cmd_args.init_lsp);
     case Z_CLI_CMD_RESHIM:
         return z_cli_try_parse_tool_into(arg, &out->cmd_args.reshim.tool);
     case Z_CLI_CMD_SWITCH:
@@ -401,6 +477,10 @@ void z_cli_apply_command_defaults(ZCliCommand cmd, ZCliArgs* out) {
     case Z_CLI_CMD_UNINSTALL:
         out->cmd_args.uninstall.version = Z_ZAP_VERSION_NULL;
         break;
+    case Z_CLI_CMD_INIT_LSP:
+        out->cmd_args.init_lsp.targets = Z_LSP_UNKNOWN;
+        out->cmd_args.init_lsp.nvim_mode = Z_NVIM_LSP_UNKNOWN;
+        break;
     case Z_CLI_CMD_RESHIM:
         out->cmd_args.reshim.tool = Z_TOOLCHAIN_ELEMENT_UNKNOWN;
         break;
@@ -459,6 +539,14 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
         return z_cli_check_version(args->cmd_args.install.version);
     case Z_CLI_CMD_UNINSTALL:
         return z_cli_check_version(args->cmd_args.uninstall.version);
+    case Z_CLI_CMD_INIT_LSP:
+        if (args->cmd_args.init_lsp.targets == Z_LSP_UNKNOWN) {
+            return (ZCliParseResult) {
+                .code = Z_CLI_PARSE_MISSING_POSITIONAL_ARG,
+                .arg_name = Z_SV("lsp-target"),
+            };
+        }
+        return Z_CLI_PARSE_RESULT_OK;
     case Z_CLI_CMD_RESHIM:
         return z_cli_check_tool(args->cmd_args.which.tool);
     case Z_CLI_CMD_SWITCH:
@@ -475,14 +563,6 @@ ZCliParseResult z_cli_validate_args(ZCliArgs* args) {
     }
     return Z_CLI_PARSE_RESULT_OK;
 }
-
-#define Z_CLI_HANDLE_ERR(ERR)               \
-    if ((ERR).code == _Z_CLI_PARSE_STOP) {  \
-        return Z_CLI_PARSE_RESULT_OK;       \
-    }                                       \
-    if ((ERR).code != Z_CLI_PARSE_OK) {     \
-        return (ERR);                       \
-    }
 
 ZCliParseResult z_cli_process_token(ZStringView arg, bool* stop_parsing_flags, ZCliArgs* out) {
     if (*stop_parsing_flags) {
