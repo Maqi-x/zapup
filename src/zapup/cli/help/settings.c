@@ -123,7 +123,7 @@ ZHelpInfo zapup_get_help() {
         .command_count = Z_ARRAY_LEN(help_commands),
 
         .footer = Z_SV(
-            "For bug reports and more information visit: https://github.com/maqi-x/zapup.\n"
+            "For bug reports and more information visit: https://github.com/thezaplang/zapup.\n"
             "Licensed under the GNU General Public License v3."
         ),
     };
