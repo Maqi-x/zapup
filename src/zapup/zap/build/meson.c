@@ -60,6 +60,7 @@ ZapBuildResult z_meson_build_zap(const ZapBuildOptions* opts) {
         .cwd = opts->zap_root,
         .argv = { .data = config_argv, .count = config_argc },
         .env = { .data = env_vars, .count = env_count },
+        .capture_stdout =
 #ifdef ZAPUP_RELEASE
             &capture
 #else
