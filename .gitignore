@@ -2,8 +2,8 @@
 compile_flags.txt
 
 # build artifacts and outputs
-build/
-out/
+/build/
+/out/
 
 # debug artifacts
 vgcore.*

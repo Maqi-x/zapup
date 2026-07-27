@@ -47,7 +47,7 @@ static void z_output_meta(ZOutputType type, FILE** out_stream, const char** out_
         color = BOLD BLUE; 
         break;
     case Z_OUTPUT_DEBUG:
-        stream = stdout;
+        stream = stderr;
         prefix = "debug: ";
         color = BOLD WHITE; 
         break;

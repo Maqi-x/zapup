@@ -64,10 +64,12 @@ int zapup_exec_install(ZapupApp* app) {
         const ZapBuildOptions opts = zapup_cli_build_args_to_opts(
             app, &args->build, z_strbuf_view(&out_path), v
         );
-        ZapBuildResult result = z_cmake_build_zap(&opts);
+        ZapBuildResult result = z_build_zap_auto(&opts);
         if (result.code != Z_ZAP_BUILD_SUCCESS) {
-            // TODO
+            z_show_error("build failed (skill issue)");
+            z_version_index_remove_by_version(&app->index, v);
             z_rm_recursive(z_strbuf_view(&out_path));
+            z_show_info(" reverted all changes");
             return 1;
         }
 

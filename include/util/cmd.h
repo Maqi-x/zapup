@@ -8,6 +8,7 @@ typedef struct ZCommand {
     ZStringView cwd;
 
     ZStringViewArray argv;
+    ZStringViewArray env;
 
     ZStringBuf* capture_stdout;
     ZStringBuf* capture_stderr;

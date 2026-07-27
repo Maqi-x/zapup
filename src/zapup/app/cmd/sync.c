@@ -28,7 +28,7 @@ int zapup_sync_single_entry(ZapupApp* app, const ZCliSyncArgs* args, ZVersionInd
             const ZapBuildOptions opts = zapup_cli_build_args_to_opts(
                 app, &args->build, z_strbuf_view(&entry->path), ver
             );
-            ZapBuildResult result = z_cmake_build_zap(&opts);
+            ZapBuildResult result = z_build_zap_auto(&opts);
             if (result.code == Z_ZAP_BUILD_SUCCESS) {
                 z_show_info("Successfully updated " Z_SV_FMT, Z_SV_FARG(version_formatted));
                 z_strbuf_destroy(&version_formatted_buf);

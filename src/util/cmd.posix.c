@@ -55,14 +55,31 @@ static void z_cmd_child_setup(const ZCommand* cmd, const ZPipes* pipes, int err_
     for (usize i = 0; argv && i < cmd->argv.count; i++) argv[i] = z_sv_to_cstr_alloc(cmd->argv.data[i]);
     if (argv) argv[cmd->argv.count] = NULL;
 
-    if (!argv || !argv[0]) {
+    char** envp = NULL;
+    if (cmd->env.count > 0) {
+        envp = malloc((cmd->env.count + 1) * sizeof(char*));
+        for (usize i = 0; envp && i < cmd->env.count; i++) envp[i] = z_sv_to_cstr_alloc(cmd->env.data[i]);
+        if (envp) envp[cmd->env.count] = NULL;
+    }
+
+    if (!argv || !argv[0] || (cmd->env.count > 0 && !envp)) {
         int err = ENOMEM;
         (void)write(err_fd, &err, sizeof(err));
         _exit(1);
     }
 
+    if (envp) {
+        for (usize i = 0; i < cmd->env.count; i++) {
+            if (!envp[i] || putenv(envp[i]) != 0) {
+                int err = errno ? errno : ENOMEM;
+                (void)write(err_fd, &err, sizeof(err));
+                _exit(1);
+            }
+        }
+    }
     execvp(argv[0], argv);
     int err = errno;
+
     (void)write(err_fd, &err, sizeof(err));
     _exit(1);
 }

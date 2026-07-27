@@ -25,4 +25,8 @@ typedef struct ZapBuildOptions {
     ZStringView cxx;
 } ZapBuildOptions;
 
+ZapBuildResult z_build_zap_auto(const ZapBuildOptions* opts);
+
 ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts);
+ZapBuildResult z_meson_build_zap(const ZapBuildOptions* opts);
+// ZapBuildResult z_gmake_build_zap(const ZapBuildResult* opts);

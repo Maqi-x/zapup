@@ -5,6 +5,7 @@
 #include <util/cmd.h>
 #include <util/fs.h>
 
+// function to build zap using slopmake
 ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
     ZapBuildResult final_res = { .code = Z_ZAP_BUILD_SUCCESS };
 
@@ -66,10 +67,16 @@ ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
     ZCommand configure_cmd = {
         .cwd = build_dir,
         .argv = { .data = config_argv, .count = config_argc },
-        .capture_stdout = &capture
+        .capture_stdout =
+#ifdef ZAPUP_RELEASE
+            &capture
+#else
+            NULL
+#endif
     };
 
-    if (z_cmd_run(&configure_cmd).status != Z_CMD_OK) {
+    ZCmdRunResult configure_result = z_cmd_run(&configure_cmd);
+    if (configure_result.status != Z_CMD_OK || configure_result.exit_code != 0) {
         final_res.code = Z_ZAP_BUILD_CONFIGURE_ERR;
         goto cleanup;
     }
@@ -88,7 +95,8 @@ ZapBuildResult z_cmake_build_zap(const ZapBuildOptions* opts) {
         .argv = { .data = build_argv, .count = build_argc }
     };
 
-    if (z_cmd_run(&compile_cmd).status != Z_CMD_OK) {
+    ZCmdRunResult compile_result = z_cmd_run(&compile_cmd);
+    if (compile_result.status != Z_CMD_OK || compile_result.exit_code != 0) {
         final_res.code = Z_ZAP_BUILD_COMPILATION_ERR;
         goto cleanup;
     }
