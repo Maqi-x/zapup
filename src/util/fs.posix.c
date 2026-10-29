@@ -224,21 +224,13 @@ static bool z_rm_recursive_internal(ZPathBuf* pb) {
     char* cpath = z_sv_to_cstr_alloc(current_pv);
     if (!cpath) return false;
 
-    struct stat st;
-    if (lstat(cpath, &st) != 0) {
-        free(cpath);
-        return false;
-    }
-
-    if (!S_ISDIR(st.st_mode)) {
+    DIR* dir = opendir(cpath);
+    if (!dir) {
         int res = remove(cpath);
         free(cpath);
         return res == 0;
     }
-
-    DIR* dir = opendir(cpath);
     free(cpath);
-    if (!dir) return false;
 
     bool success = true;
     struct dirent* entry;
